@@ -3,12 +3,17 @@
 loc=/tmp/frames
 function extractor(){
     rm -rf $loc;
-    read -p "Give video location: " vid;
-    read -p "Give fps count: " fps;
-    mkdir $loc;
-    echo 'extracting frames ...';
-    ffmpeg -i $vid -r $fps $loc/%d.jpg &> /dev/null;
-    setter;
+    vid="$(ls -a | grep 'mp4\|mkv')";
+    if [[ -e "$vid" ]];
+    then
+        read -p "Give fps count: " fps;
+        mkdir $loc;
+        echo 'extracting frames ...';
+        ffmpeg -i $vid -r $fps $loc/%d.jpg &> /dev/null;
+        setter;
+    else
+        echo "Copy video to this dir.";
+    fi
 }
 
 function setter(){
