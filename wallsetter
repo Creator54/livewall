@@ -5,7 +5,7 @@ function extractor(){
     read -p "Give fps count: " fps;
     mkdir output;
     echo 'extracting frames ...';
-    ffmpeg -i $vid -r $fps output/%d.png &> /dev/null;
+    ffmpeg -i $vid -r $fps output/%d.jpg &> /dev/null;
     setter;
 }
 
@@ -14,7 +14,7 @@ function setter(){
     echo "wallsetter started !"; 
     while true
     do
-        nitrogen output/$i.png --set-auto;
+        nitrogen output/$i.jpg --set-auto;
         ((i++));
         if [ $i -eq $(ls output/| wc -l) ]
         then
