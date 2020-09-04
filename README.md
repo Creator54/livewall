@@ -20,4 +20,10 @@ git clone $this_repo
 Copy any short video to $this_repo clone
 ./wallsetter
 ```
+
+#### Note:
+```
+try with videos < 1 min
+cuz short videos == lesser frames to extract
+```
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
