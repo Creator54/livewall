@@ -18,7 +18,7 @@ video input >> frames >> sets wallpaper
 ```
 git clone $this_repo
 Copy any short video to $this_repo clone
-./wallsetter
+./wallsetter extractor
 ```
 
 #### Note:
