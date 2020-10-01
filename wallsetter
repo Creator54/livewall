@@ -1,6 +1,8 @@
 #!/bin/bash
 
 loc=/tmp/frames
+type=jpg
+#use png if cpu power not an issue
 function extractor(){
     rm -rf $loc;
     vid="$(ls -a | grep 'mp4\|mkv')";
@@ -9,7 +11,7 @@ function extractor(){
         read -p "Give fps count: " fps;
         mkdir $loc;
         echo 'extracting frames ...';
-        ffmpeg -i $vid -r $fps $loc/%d.jpg &> /dev/null;
+        ffmpeg -i $vid -r $fps $loc/%d.$type &> /dev/null;
         setter;
     else
         echo "Copy video to this dir.";
@@ -21,7 +23,7 @@ function setter(){
     echo "wallsetter started !"; 
     while true
     do
-        nitrogen $loc/$i.jpg --set-auto;
+        nitrogen $loc/$i.$type --set-auto;
         ((i++));
         if [ $i -eq $(ls $loc/| wc -l) ]
         then
