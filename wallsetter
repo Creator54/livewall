@@ -3,12 +3,13 @@
 loc=/tmp/frames
 type=jpg
 #use png if cpu power not an issue
+fps=20 
+# for faster playback reduce fps 
 function extractor(){
     rm -rf $loc;
     vid="$(ls -a | grep 'mp4\|mkv')";
     if [[ -e "$vid" ]];
     then
-        read -p "Give fps count: " fps;
         mkdir $loc;
         echo 'extracting frames ...';
         ffmpeg -i $vid -r $fps $loc/%d.$type &> /dev/null;
