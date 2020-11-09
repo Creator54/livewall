@@ -26,4 +26,7 @@ Copy any short video to $this_repo clone
 try with videos < 1 min
 cuz short videos == lesser frames to extract
 ```
+
+#### Preview:
+[![](http://img.youtube.com/vi/smD4KK-v5fA/0.jpg)](http://www.youtube.com/watch?v=smD4KK-v5fA "")
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
