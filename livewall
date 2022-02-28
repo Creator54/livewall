@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+loc=/tmp/frames
+
+if [ -z $3 ];then
+  type=jpg
+else
+  type=$3
+fi
+if [ -z $4 ];then #less is fast,more is slow
+  nth_frame=20 
+else
+  nth_frame=$4
+fi
+
+function use(){
+  rm -rf $loc;
+  if [[ -e "$1" ]];
+  then
+    mkdir $loc;
+    echo 'extracting frames ...';
+    ffmpeg -i $1 -r $nth_frame $loc/%d.$type &> /dev/null;
+    set;
+  else
+    echo "Pass a Videofile";
+  fi
+}
+
+function set(){
+  if [ $(ls $loc/|wc -l) != 0 ];then
+    i=1;
+    echo "wallsetter running !"; 
+    while true
+    do
+      feh --bg-fill $loc/$i.$type;
+      ((i++));
+      if [ $i -eq $(ls $loc/| wc -l) ]
+      then
+          i=1;
+      fi
+    done
+  else
+    echo "Failed to find extracted images !!"
+  fi
+}
+
+"$@"
