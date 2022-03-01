@@ -13,5 +13,5 @@ wget https://raw.githubusercontent.com/Creator54/livewall/main/livewall
 ```
 
 #### Preview:
-[![](http://img.youtube.com/vi/smD4KK-v5fA/0.jpg)](http://www.youtube.com/watch?v=smD4KK-v5fA "")
+![Preview](./preview.gif)
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
