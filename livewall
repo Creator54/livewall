@@ -17,6 +17,7 @@ else
 fi
 
 function start() {
+	stop &>/dev/null #stop any instances running !
 	rm -rf $loc
 	if [[ -e "$1" ]]; then
 		mkdir $loc
