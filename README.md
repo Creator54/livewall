@@ -8,9 +8,9 @@ A simple live wallpaper setter for linux written in bash
 #### Usage :
 ```
 wget https://raw.githubusercontent.com/Creator54/livewall/main/livewall
-./livewall use vid.mp4 
-./livewall use vid.mp4 png
-./livewall use vid.mp4 png 20
+./livewall start vid.mp4 
+./livewall start vid.mp4 png
+./livewall start vid.mp4 png 20
 ./livewall stop
 ```
 
