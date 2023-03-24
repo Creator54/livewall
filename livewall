@@ -22,7 +22,9 @@ function use() {
 		mkdir $loc
 		echo 'extracting frames ...'
 		ffmpeg -i $1 -r $nth_frame $loc/%d.$type &>/dev/null
-		set
+		echo "Livewall started !"
+		set &
+		echo $! > $PID
 	else
 		echo "Pass a Videofile"
 	fi
@@ -30,7 +32,7 @@ function use() {
 
 function stop() {
 	if [[ -e "$PID" ]]; then
-		kill $(cat $PID)
+		kill -9 $(cat $PID)
 		echo "Stopped livewall !"
 		rm -rf $PID
 	else
@@ -39,10 +41,8 @@ function stop() {
 }
 
 function set() {
-	echo $$ >$PID
 	if [ $(ls $loc/ | wc -l) != 0 ]; then
 		i=1
-		echo "wallsetter running !"
 		while true; do
 			feh --bg-fill $loc/$i.$type
 			((i++))
@@ -54,5 +54,4 @@ function set() {
 		echo "Failed to find extracted images !!"
 	fi
 }
-
 "$@"
