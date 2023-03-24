@@ -16,7 +16,7 @@ else
 	nth_frame=$4
 fi
 
-function use() {
+function start() {
 	rm -rf $loc
 	if [[ -e "$1" ]]; then
 		mkdir $loc
@@ -24,7 +24,7 @@ function use() {
 		ffmpeg -i $1 -r $nth_frame $loc/%d.$type &>/dev/null
 		echo "Livewall started !"
 		set &
-		echo $! > $PID
+		echo $! >$PID
 	else
 		echo "Pass a Videofile"
 	fi
@@ -54,4 +54,12 @@ function set() {
 		echo "Failed to find extracted images !!"
 	fi
 }
+
+if [[ -z "$1" || "$1" = "-h" || "$1" = "--help" || ("$1" != "set" && "$1" != "start" && "$1" != "stop") ]]; then
+	echo "Usage:"
+	echo "livewall start <path to video> <image type: jpg/png> <nth frame: greater than 20 is slow >"
+	echo "livewall stop"
+	exit 0
+fi
+
 "$@"
