@@ -24,7 +24,7 @@ function start() {
 		echo 'extracting frames ...'
 		ffmpeg -i $1 -r $nth_frame $loc/%d.$type &>/dev/null
 		echo "Livewall started !"
-		set &
+		set $loc &
 		echo $! >$PID
 	else
 		echo "Pass a Videofile"
@@ -42,12 +42,12 @@ function stop() {
 }
 
 function set() {
-	if [ $(ls $loc/ | wc -l) != 0 ]; then
+	if [ $(ls $1/ | wc -l) != 0 ]; then
 		i=1
 		while true; do
-			feh --bg-fill $loc/$i.$type
+			feh --bg-fill $1/$i.$type
 			((i++))
-			if [ $i -eq $(ls $loc/ | wc -l) ]; then
+			if [ $i -eq $(ls $1/ | wc -l) ]; then
 				i=1
 			fi
 		done
@@ -59,6 +59,7 @@ function set() {
 if [[ -z "$1" || "$1" = "-h" || "$1" = "--help" || ("$1" != "set" && "$1" != "start" && "$1" != "stop") ]]; then
 	echo "Usage:"
 	echo "livewall start <path to video> <image type: jpg/png> <nth frame: greater than 20 is slow >"
+	echo "livewall set <images folder> <jpg/png>"
 	echo "livewall stop"
 	exit 0
 fi

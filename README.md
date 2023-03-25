@@ -11,6 +11,7 @@ wget https://raw.githubusercontent.com/Creator54/livewall/main/livewall
 ./livewall start vid.mp4 
 ./livewall start vid.mp4 png
 ./livewall start vid.mp4 png 20
+./livewall set <images_directory> png
 ./livewall stop
 ```
 
