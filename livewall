@@ -38,7 +38,7 @@ start() {
     echo "Extracting frames from '$1'..."
     extract_frames "$1" "$2" >/dev/null 2>&1 # Extract frames
 
-    set "$loc" & # Start setting wallpapers
+    set_wallpapers "$loc" & # Start setting wallpapers
 
     echo "$!" > "$PID" # Save PID to file
     echo "Livewall started successfully!"
