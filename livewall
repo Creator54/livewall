@@ -10,6 +10,27 @@ PID="/tmp/livewall.pid"
 type=jpg
 nth_frame=20
 
+# Define function to extract frames from video
+extract_frames() {
+  if [ -e "$1" ]; then
+    if [ -z "$2" ]; then
+      loc=/tmp/frames
+    else
+      loc=$2
+    fi
+
+    rm -rf "$loc" # Remove any existing frames directory
+
+    mkdir "$loc" # Create frames directory
+
+    echo "Extracting frames from '$1'..."
+    ffmpeg -i "$1" -r "$nth_frame" "$loc/%d.$type" >/dev/null 2>&1 # Extract frames
+    echo "Frames extracted successfully to '$loc'"
+  else
+    echo "Please provide a video file."
+  fi
+}
+
 # Define function to start livewall
 start() {
   stop >/dev/null 2>&1 # Stop any instances running
@@ -20,7 +41,8 @@ start() {
     mkdir "$loc" # Create frames directory
 
     echo "Extracting frames from '$1'..."
-    ffmpeg -i "$1" -r "$nth_frame" "$loc/%d.$type" >/dev/null 2>&1 # Extract frames
+    extract_frames "$1" "$2" >/dev/null 2>&1 # Extract frames
+
     set "$loc" & # Start setting wallpapers
 
     echo "$!" > "$PID" # Save PID to file
@@ -72,6 +94,22 @@ case "$1" in
       start "$2"
     fi
     ;;
+  extract)
+    if [ -z "$2" ]; then
+      echo "Please provide a video file."
+    else
+      if [ -n "$3" ]; then
+        loc="$3"
+      fi
+      if [ -n "$4" ]; then
+        type="$4"
+      fi
+      if [ -n "$5" ]; then
+        nth_frame="$5"
+      fi
+      extract_frames "$2" "$loc"
+    fi
+    ;;
   set)
     if [ -z "$2" ]; then
       echo "Please provide a directory containing images."
@@ -90,6 +128,7 @@ case "$1" in
   *)
     echo "Usage:"
     echo "livewall start <path to video> <image type: jpg/png> <frame interval: greater than 20 is slow>"
+    echo "livewall extract video.mp4 <path where to keep images>  <jpg/png> <frame interval>"
     echo "livewall set <images folder> <jpg/png>"
     echo "livewall stop"
     ;;

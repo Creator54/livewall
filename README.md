@@ -8,10 +8,11 @@ A simple live wallpaper setter for linux written in bash
 #### Usage :
 ```
 wget https://raw.githubusercontent.com/Creator54/livewall/main/livewall
-./livewall start vid.mp4 
-./livewall start vid.mp4 png
-./livewall start vid.mp4 png 20
-./livewall set <images_directory> png
+chmod +x livewall
+
+./livewall start <path to video> <image type: jpg/png> <frame interval: greater than 20 is slow>
+./livewall extract video.mp4 <path where to keep images>  <jpg/png> <frame interval>
+./livewall set <images folder> <jpg/png>
 ./livewall stop
 ```
 
