@@ -31,7 +31,9 @@ nix develop
 ### Manual Installation (Non-Nix)
 If you are not using Nix, you can install the tool globally (to `/usr/local/` by default).
 
-**Dependencies**: Ensure you have the following installed: `mpvpaper`, `mpv`, `yt-dlp`, `socat`, `jq`, `fzf`, `swaybg`.
+**Dependencies**: Ensure you have the following installed:
+- **Core**: `mpvpaper`, `mpv`, `yt-dlp`, `socat`, `jq`, `fzf`, `swaybg`.
+- **Optional**: `notify-send` (notifications), `xdg-open` (open in browser), `axel` (faster downloads).
 
 ```bash
 # Install to /usr/local/bin and /usr/local/lib

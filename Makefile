@@ -33,6 +33,9 @@ check:
 	@which socat >/dev/null || (echo "ERROR: socat not found"; exit 1)
 	@which jq >/dev/null || (echo "ERROR: jq not found"; exit 1)
 	@which fzf >/dev/null || (echo "ERROR: fzf not found"; exit 1)
+	@which notify-send >/dev/null || (echo "WARNING: notify-send not found (notifications will not work)")
+	@which xdg-open >/dev/null || (echo "WARNING: xdg-open not found ('open' command will not work)")
+	@which axel >/dev/null || (echo "WARNING: axel not found ('download' command uses axel for acceleration)")
 	@which swaybg >/dev/null || (echo "WARNING: swaybg not found (wallpaper restore will not work)")
 	@echo "All required dependencies found."
 
