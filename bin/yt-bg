@@ -40,8 +40,9 @@ RESULTS_FILE="/tmp/yt-results.txt"
 
 # Optimization: --flat-playlist is much faster but gives no thumbnails.
 # We will construct thumbnail URLs manually using the VideoID.
+# Use ANSI-C quoting to ensure tabs are passed as actual tab characters
 yt-dlp "ytsearch15:$QUERY" \
-  --print "%(title)s\t%(channel)s\t%(duration_string)s\t%(webpage_url)s\t%(id)s" \
+  --print $'%(title)s\t%(channel)s\t%(duration_string)s\t%(webpage_url)s\t%(id)s' \
   --flat-playlist --no-warnings > "$RESULTS_FILE"
 
 if [ ! -s "$RESULTS_FILE" ]; then
