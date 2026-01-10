@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # yt-bg-control: Control YouTube wallpaper playback
-# Commands: play <url>, toggle-pip, toggle-pause, toggle-mute, seek-forward, seek-backward, download, open
+# Commands: play <url>, toggle-pip, toggle-pause, toggle-mute, cycle-quality, seek-forward, seek-backward, download, open
 
 SOCKET="/tmp/live-wallpaper-socket"
 LOG_FILE="/tmp/yt-bg-control.log"

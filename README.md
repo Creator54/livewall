@@ -69,6 +69,7 @@ binds {
     Mod+W { spawn "yt-bg-control" "toggle-pip"; }
     Mod+P { spawn "yt-bg-control" "toggle-pause"; }
     Mod+M { spawn "yt-bg-control" "toggle-mute"; }
+    Mod+Q { spawn "yt-bg-control" "cycle-quality"; }
 }
 ```
 
