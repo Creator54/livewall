@@ -125,9 +125,17 @@ case "$1" in
     URL=$(get_prop "path")
     POS=$(get_prop "time-pos")
     PAUSE=$(get_prop "pause")
+    # Optimize toggle: Try to get the direct stream URL to avoid re-resolving with yt-dlp
+    STREAM_URL=$(get_prop "stream-path")
 
     if [ "$URL" == "null" ] || [ -z "$URL" ]; then exit 1; fi
     log "Toggling PiP. URL: $URL, Pos: $POS"
+
+    # Use stream URL if available (faster), otherwise fallback to original URL
+    PLAY_URL="$URL"
+    if [ "$STREAM_URL" != "null" ] && [ -n "$STREAM_URL" ]; then
+        PLAY_URL="$STREAM_URL"
+    fi
 
     # Determine current mode by checking process
     # If mpvpaper is running, we switch to mpv (floating)
@@ -149,7 +157,9 @@ case "$1" in
            SCRIPT_OPT="--script=$MPRIS_SCRIPT_PATH"
        fi
 
-       mpv --input-ipc-server=$SOCKET --loop --title="Live Wallpaper PiP" --force-window $START_OPT $SCRIPT_OPT $QUALITY_SCRIPT_OPT $MPV_OPTS "$URL" >> "$LOG_FILE" 2>&1 &
+       # Use PLAY_URL (direct stream) but keep original URL metadata for history/context if possible
+       # We just play the stream directly for speed.
+       mpv --input-ipc-server=$SOCKET --loop --title="Live Wallpaper PiP" --force-window $START_OPT $SCRIPT_OPT $QUALITY_SCRIPT_OPT $MPV_OPTS "$PLAY_URL" >> "$LOG_FILE" 2>&1 &
 
        # Restore static wallpaper behind it
        # Check if wallpaper file exists, otherwise skip or use a default color if desired (omitted for now)
@@ -167,7 +177,7 @@ case "$1" in
        START_OPT=""
        if [ "$POS" != "null" ]; then START_OPT="--start=$POS"; fi
 
-       mpvpaper -o "--loop --input-ipc-server=$SOCKET --panscan=1.0 $START_OPT $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$URL" >> "$LOG_FILE" 2>&1 &
+       mpvpaper -o "--loop --input-ipc-server=$SOCKET --panscan=1.0 $START_OPT $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$PLAY_URL" >> "$LOG_FILE" 2>&1 &
     fi
     ;;
 
