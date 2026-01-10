@@ -19,6 +19,8 @@
 
         buildInputs = with pkgs; [ makeWrapper ];
 
+        dontBuild = true;
+
         installPhase = ''
           mkdir -p $out/bin $out/lib
 
