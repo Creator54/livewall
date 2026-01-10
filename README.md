@@ -1,41 +1,93 @@
 # yt-bg: YouTube Live Wallpaper for Niri/Wayland
 
-A standalone tool to search YouTube and play videos as live wallpapers or floating Picture-in-Picture windows.
+A standalone tool to search YouTube and play videos as live wallpapers or floating Picture-in-Picture windows. Built for Wayland (Niri/Sway) using `mpvpaper` and `yt-dlp`.
 
 ## Features
-- **Search**: Fast YouTube search using `fzf` with thumbnail previews (requires Kitty terminal for images).
-- **Wallpaper Mode**: Plays video as a desktop wallpaper using `mpvpaper`.
+- **Fast Search**: Search YouTube directly from the terminal using `fzf`.
+- **Thumbnail Previews**: View video thumbnails in the terminal while searching (requires Kitty terminal).
+- **Wallpaper Mode**: Plays video as a seamless desktop wallpaper using `mpvpaper`.
 - **PiP Mode**: Seamlessly toggles between wallpaper and a floating window (`mpv`) while maintaining playback position.
-- **Controls**:
-  - `play <url>`: Play a video.
-  - `toggle-pip`: Switch between Wallpaper and Floating Window.
-  - `toggle-pause`: Pause/Resume.
-  - `toggle-mute`: Mute/Unmute.
-  - `download`: Download the current video using `yt-dlp` and `axel`.
-  - `open`: Open current video in browser.
+- **Smart Resume**: Switches back to wallpaper mode exactly where you left off.
+- **CLI Support**: Pass search queries directly as arguments to skip the prompt.
 
-## Requirements
-- Nix with Flakes enabled.
+## Installation
+
+### Requirements
+- **Nix** (with Flakes enabled)
+- **Wayland Compositor** (tested on Niri, should work on Sway/Hyprland)
+- **Kitty Terminal** (optional, for image previews)
+
+### Running with Nix (Recommended)
+You can run the tool directly without installing it globally:
+
+```bash
+# Enter the development environment (adds bin/ to PATH)
+nix develop
+
+# Or run directly from the directory
+./bin/yt-bg
+```
 
 ## Usage
 
-1. Enter the development environment:
-   ```bash
-   nix develop
-   ```
+### 1. Search & Play
+You can search interactively or pass a query directly:
 
-2. Search for a video:
-   ```bash
-   yt-bg
-   ```
+```bash
+# Interactive mode (prompts for input)
+yt-bg
 
-3. Control playback (bind these to keys in your window manager):
-   ```bash
-   yt-bg-control toggle-pip
-   yt-bg-control toggle-pause
-   ```
+# Direct search (skips prompt)
+yt-bg "lofi hip hop radio"
+```
 
-## Directory Structure
+Use `Up`/`Down` to navigate results and `Enter` to select. The video will start playing as your wallpaper.
+
+### 2. Control Playback
+Use `yt-bg-control` to manage the active video. It is recommended to bind these commands to keyboard shortcuts in your window manager config (e.g., `config.kdl` for Niri).
+
+| Command | Description |
+|---------|-------------|
+| `yt-bg-control toggle-pip` | Switch between Wallpaper and Floating Window (PiP) |
+| `yt-bg-control toggle-pause` | Pause/Resume playback |
+| `yt-bg-control toggle-mute` | Mute/Unmute audio |
+| `yt-bg-control seek-forward` | Seek forward 10 seconds |
+| `yt-bg-control seek-backward` | Seek backward 10 seconds |
+| `yt-bg-control download` | Download the current video (to `~/Downloads`) |
+| `yt-bg-control open` | Open the current video in your default browser |
+
+### 3. Example Niri Configuration
+Add these binds to your `~/.config/niri/config.kdl`:
+
+```kdl
+binds {
+    Mod+W { spawn "yt-bg-control" "toggle-pip"; }
+    Mod+P { spawn "yt-bg-control" "toggle-pause"; }
+    Mod+M { spawn "yt-bg-control" "toggle-mute"; }
+}
+```
+
+## Development & Testing
+
+### Running Tests
+This project includes a comprehensive test suite that uses mocks to simulate `yt-dlp`, `mpv`, and `fzf`, allowing it to run entirely in the terminal without a GUI.
+
+```bash
+# Run all tests
+make test
+```
+
+### Directory Structure
 - `bin/`: Executable scripts (`yt-bg`, `yt-bg-control`).
-- `lib/`: Helper scripts (`preview.sh`).
+- `lib/`: Helper scripts (e.g., `preview.sh` for fzf).
+- `test/`: Test suite and mock binaries.
 - `flake.nix`: Dependency management and environment setup.
+
+## troubleshooting
+
+**"Failed to extract valid URL"**
+- Ensure you are running the latest version. This was fixed by handling tab characters in video titles correctly.
+- Check the logs for details: `/tmp/yt-bg-search.log`.
+
+**No thumbnails in preview?**
+- Ensure you are running `yt-bg` inside the **Kitty** terminal. Other terminals may show text-only previews.
