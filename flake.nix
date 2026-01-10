@@ -97,6 +97,7 @@
           swaybg # for restoring background
           kitty # for kitten icat
           axel # for faster downloads
+          xdg-utils # for xdg-open
 
           # Script dependencies
           gawk
