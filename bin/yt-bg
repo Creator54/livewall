@@ -69,8 +69,9 @@ SELECTED=$(cat "$RESULTS_FILE" | fzf \
 if [ -n "$SELECTED" ]; then
   echo "[$(date)] Selected raw: $SELECTED" >> "$LOG_FILE"
 
-  # Extract URL (4th field, TAB delimited)
-  URL=$(echo "$SELECTED" | cut -f4)
+  # Extract URL (4th field)
+  # Use awk for more robust tab separation
+  URL=$(echo "$SELECTED" | awk -F'\t' '{print $4}')
 
   echo "[$(date)] Extracted URL: $URL" >> "$LOG_FILE"
 
