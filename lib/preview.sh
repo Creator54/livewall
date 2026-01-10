@@ -1,13 +1,33 @@
 #!/usr/bin/env bash
 # preview.sh: Helper for fzf preview
 
-CACHE_DIR="/tmp/yt-wall-thumbs"
-LOG_FILE="/tmp/yt-bg-preview.log"
-mkdir -p "$CACHE_DIR"
+# Resolve Lib Dir & Source Utils
+LIB_DIR=""
+if [ -f "$(dirname "$0")/utils.sh" ]; then
+    LIB_DIR="$(dirname "$0")"
+elif [ -f "$(dirname "$0")/../lib/utils.sh" ]; then
+    LIB_DIR="$(dirname "$0")/../lib"
+elif [ -f "$(dirname "$0")/../lib/yt-bg/utils.sh" ]; then
+    LIB_DIR="$(dirname "$0")/../lib/yt-bg"
+elif [ -d "/usr/local/lib/yt-bg" ]; then
+    LIB_DIR="/usr/local/lib/yt-bg"
+fi
+
+if [ -n "$LIB_DIR" ] && [ -f "$LIB_DIR/utils.sh" ]; then
+    # shellcheck source=./utils.sh
+    source "$LIB_DIR/utils.sh"
+else
+    # Fallback if utils.sh not found (e.g. running in isolation without proper install)
+    CACHE_DIR="/tmp/yt-wall-thumbs"
+    PREVIEW_LOG="/tmp/yt-bg-preview.log"
+    mkdir -p "$CACHE_DIR"
+fi
+
+PREVIEW_LOG="${PREVIEW_LOG:-$RUNTIME_DIR/preview.log}"
 
 # Log raw input for debugging
-echo "=== Preview called at $(date) ===" >> "$LOG_FILE"
-echo "Raw input: $*" >> "$LOG_FILE"
+log "=== Preview called at $(date) ===" "$PREVIEW_LOG"
+log "Raw input: $*" "$PREVIEW_LOG"
 
 LINE="$*"
 
@@ -42,7 +62,7 @@ if [ -n "$VIDEO_ID" ] && [ "$VIDEO_ID" != "NA" ]; then
     # Use --unicode-placeholder for better compatibility with fzf
     # This prevents image bleeding into other terminal areas
     if [ -s "$IMG" ]; then
-        kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no "$IMG" 2>>"$LOG_FILE"
+        kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no "$IMG" 2>>"$PREVIEW_LOG"
     fi
 else
     :

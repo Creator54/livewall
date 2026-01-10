@@ -9,19 +9,30 @@ LIB_DIR="$ROOT_DIR/lib"
 MOCKS_DIR="$SCRIPT_DIR/mocks"
 LOG_FILE="/tmp/yt-bg-test.log"
 
+export XDG_RUNTIME_DIR="/tmp/yt-bg-test-runtime"
+# Source utils to get standardized paths
+if [ -f "$LIB_DIR/utils.sh" ]; then
+    source "$LIB_DIR/utils.sh"
+else
+    echo "Error: utils.sh not found at $LIB_DIR/utils.sh"
+    exit 1
+fi
+
 export PATH="$MOCKS_DIR:$BIN_DIR:$PATH"
 export PREVIEW_SCRIPT_PATH="$LIB_DIR/preview.sh"
 
-# Clear log
+# Clear log and runtime dir
 rm -f "$LOG_FILE"
 touch "$LOG_FILE"
+rm -rf "$RUNTIME_DIR"
+mkdir -p "$RUNTIME_DIR"
 
 echo "=== Starting Tests ==="
 
 # Test 1: yt-bg search flow
 echo "Test 1: yt-bg search flow"
 # Cleanup before starting
-rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running /tmp/live-wallpaper-socket
+rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running "$IPC_SOCKET"
 
 # We pipe "Rick Astley" into the script.
 # But yt-bg reads from user input `read QUERY`.
@@ -77,8 +88,8 @@ touch /tmp/mock_mpvpaper_running
 rm -f /tmp/mock_mpv_running
 
 # Create a dummy socket for [ -S ] check
-rm -f /tmp/live-wallpaper-socket
-python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/tmp/live-wallpaper-socket')"
+rm -f "$IPC_SOCKET"
+python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
 # We need to mock the socket response for get_prop in socat mock
 # The socat mock handles this based on input.
@@ -102,8 +113,8 @@ rm -f /tmp/mock_mpvpaper_running
 touch /tmp/mock_mpv_running
 
 # Re-create socket
-rm -f /tmp/live-wallpaper-socket
-python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/tmp/live-wallpaper-socket')"
+rm -f "$IPC_SOCKET"
+python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
 yt-bg-control toggle-pip
 
@@ -241,8 +252,8 @@ rm -f "$HOME/.current_wallpaper"
 touch /tmp/mock_mpvpaper_running
 rm -f /tmp/mock_mpv_running
 # Re-create socket
-rm -f /tmp/live-wallpaper-socket
-python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/tmp/live-wallpaper-socket')"
+rm -f "$IPC_SOCKET"
+python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
 # Clear log of previous swaybg calls to be sure
 # Use a temp file to avoid race conditions with background writers (though minimal here)
@@ -268,8 +279,8 @@ touch "$HOME/.current_wallpaper"
 touch /tmp/mock_mpvpaper_running
 rm -f /tmp/mock_mpv_running
 # Re-create socket
-rm -f /tmp/live-wallpaper-socket
-python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/tmp/live-wallpaper-socket')"
+rm -f "$IPC_SOCKET"
+python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
 yt-bg-control toggle-pip
 # The script waits 1s before calling swaybg, so we wait longer
@@ -308,18 +319,18 @@ fi
 # Test 16: cycle-quality
 echo "Test 16: cycle-quality"
 # Setup
-rm -f /tmp/yt-bg-quality
+rm -f "$QUALITY_FILE"
 # Mock socket existence
-rm -f /tmp/live-wallpaper-socket
-python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/tmp/live-wallpaper-socket')"
+rm -f "$IPC_SOCKET"
+python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
 # 1. First cycle: default (1080p implied) -> 720p
 yt-bg-control cycle-quality
 
-if [ "$(cat /tmp/yt-bg-quality)" == "720p" ]; then
+if [ "$(cat "$QUALITY_FILE")" == "720p" ]; then
     echo "PASS: cycled to 720p"
 else
-    echo "FAIL: expected 720p, got $(cat /tmp/yt-bg-quality)"
+    echo "FAIL: expected 720p, got $(cat "$QUALITY_FILE")"
     exit 1
 fi
 
@@ -360,10 +371,10 @@ yt-bg-control cycle-quality # -> 480p
 yt-bg-control cycle-quality # -> best
 yt-bg-control cycle-quality # -> 1080p
 
-if [ "$(cat /tmp/yt-bg-quality)" == "1080p" ]; then
+if [ "$(cat "$QUALITY_FILE")" == "1080p" ]; then
     echo "PASS: cycled back to 1080p"
 else
-    echo "FAIL: expected 1080p after wrap-around, got $(cat /tmp/yt-bg-quality)"
+    echo "FAIL: expected 1080p after wrap-around, got $(cat "$QUALITY_FILE")"
     exit 1
 fi
 
@@ -379,7 +390,7 @@ echo "Test 17: Lua Script Loading"
 export QUALITY_SCRIPT_PATH="$LIB_DIR/quality-cycle.lua"
 
 # Cleanup from previous tests to force new instance
-rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running /tmp/live-wallpaper-socket
+rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running "$IPC_SOCKET"
 
 # Trigger play
 yt-bg-control play "https://example.com/lua-test"
@@ -398,8 +409,8 @@ fi
 touch /tmp/mock_mpvpaper_running
 rm -f /tmp/mock_mpv_running
 # Mock socket
-rm -f /tmp/live-wallpaper-socket
-python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/tmp/live-wallpaper-socket')"
+rm -f "$IPC_SOCKET"
+python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
 yt-bg-control toggle-pip
 sleep 0.5
@@ -417,7 +428,7 @@ unset QUALITY_SCRIPT_PATH
 # Test 18: History Logging
 echo "Test 18: History Logging"
 # Cleanup mock state to force new instance (and thus "Called mpvpaper...")
-rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running /tmp/live-wallpaper-socket
+rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running "$IPC_SOCKET"
 
 # Define a test history file
 export HOME="/tmp/yt-bg-test-home"

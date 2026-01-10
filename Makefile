@@ -13,6 +13,7 @@ install:
 	cp bin/yt-bg-control $(BINDIR)/yt-bg-control
 	cp lib/preview.sh $(LIBDIR)/preview.sh
 	cp lib/quality-cycle.lua $(LIBDIR)/quality-cycle.lua
+	cp lib/utils.sh $(LIBDIR)/utils.sh
 	chmod +x $(BINDIR)/yt-bg $(BINDIR)/yt-bg-control $(LIBDIR)/preview.sh
 	@echo "Installation complete."
 	@echo "NOTE: Ensure you have the required dependencies: mpvpaper, mpv, yt-dlp, socat, jq, fzf, swaybg"

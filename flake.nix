@@ -29,6 +29,7 @@
           cp bin/yt-bg-control $out/bin/
           cp lib/preview.sh $out/lib/
           cp lib/quality-cycle.lua $out/lib/
+          cp lib/utils.sh $out/lib/
 
           chmod +x $out/bin/* $out/lib/*
         '';
