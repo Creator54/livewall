@@ -9,13 +9,15 @@ QUALITY_FILE="/tmp/yt-bg-quality"
 # Quality Definitions
 # default: 1080p
 # We exclude AV1 if possible for better hardware decoding compatibility on some systems
+# We also disable hardware decoding (--hwdec=no) to prevent "Cannot load libcuda.so.1" crashes
+# on systems where drivers aren't mapped into the nix environment.
 get_quality_opts() {
     case "$1" in
-        "best") echo "--ytdl-format=bestvideo+bestaudio/best" ;;
-        "1080p") echo "--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080]" ;;
-        "720p") echo "--ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720]" ;;
-        "480p") echo "--ytdl-format=bestvideo[height<=480]+bestaudio/best[height<=480]" ;;
-        *) echo "--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080]" ;; # Default 1080p
+        "best") echo "--ytdl-format=bestvideo+bestaudio/best --hwdec=no" ;;
+        "1080p") echo "--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080] --hwdec=no" ;;
+        "720p") echo "--ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720] --hwdec=no" ;;
+        "480p") echo "--ytdl-format=bestvideo[height<=480]+bestaudio/best[height<=480] --hwdec=no" ;;
+        *) echo "--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080] --hwdec=no" ;; # Default 1080p
     esac
 }
 
