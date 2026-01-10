@@ -25,6 +25,17 @@ uninstall:
 	rm -rf $(LIBDIR)
 	@echo "Uninstallation complete."
 
+check:
+	@echo "Checking dependencies..."
+	@which mpvpaper >/dev/null || (echo "ERROR: mpvpaper not found"; exit 1)
+	@which mpv >/dev/null || (echo "ERROR: mpv not found"; exit 1)
+	@which yt-dlp >/dev/null || (echo "ERROR: yt-dlp not found"; exit 1)
+	@which socat >/dev/null || (echo "ERROR: socat not found"; exit 1)
+	@which jq >/dev/null || (echo "ERROR: jq not found"; exit 1)
+	@which fzf >/dev/null || (echo "ERROR: fzf not found"; exit 1)
+	@which swaybg >/dev/null || (echo "WARNING: swaybg not found (wallpaper restore will not work)")
+	@echo "All required dependencies found."
+
 clean:
 	rm -rf /tmp/yt-wall-thumbs /tmp/yt-bg-search.log /tmp/yt-bg-control.log /tmp/yt-bg-preview.log /tmp/yt-bg-test.log /tmp/yt-results.txt /tmp/live-wallpaper-socket /tmp/yt-bg-quality /tmp/zen-profile /tmp/yt-bg-mpv.conf result
 
