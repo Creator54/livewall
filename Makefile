@@ -38,5 +38,7 @@ check:
 
 clean:
 	rm -rf /tmp/yt-wall-thumbs /tmp/yt-bg-search.log /tmp/yt-bg-control.log /tmp/yt-bg-preview.log /tmp/yt-bg-test.log /tmp/yt-results.txt /tmp/live-wallpaper-socket /tmp/yt-bg-quality /tmp/zen-profile /tmp/yt-bg-mpv.conf result
+	rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running
+	rm -rf /tmp/yt-bg-test-home
 
 .PHONY: test install uninstall clean

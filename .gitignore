@@ -9,3 +9,8 @@ result
 
 # Temp
 tmp/
+*~
+*.swp
+.DS_Store
+.vscode/
+.idea/
