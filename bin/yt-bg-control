@@ -66,6 +66,9 @@ if [ -z "$QUALITY_SCRIPT" ]; then
     # Check relative to script (source/nix)
     if [ -f "$(dirname "$0")/../lib/quality-cycle.lua" ]; then
         QUALITY_SCRIPT="$(dirname "$0")/../lib/quality-cycle.lua"
+    # Check relative to script (installed with prefix)
+    elif [ -f "$(dirname "$0")/../lib/yt-bg/quality-cycle.lua" ]; then
+        QUALITY_SCRIPT="$(dirname "$0")/../lib/yt-bg/quality-cycle.lua"
     # Check standard install location
     elif [ -f "/usr/local/lib/yt-bg/quality-cycle.lua" ]; then
         QUALITY_SCRIPT="/usr/local/lib/yt-bg/quality-cycle.lua"

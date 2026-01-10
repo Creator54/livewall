@@ -8,6 +8,9 @@ if [ -z "$PREVIEW_SCRIPT" ]; then
     # Check relative to script (source/nix)
     if [ -f "$(dirname "$0")/../lib/preview.sh" ]; then
         PREVIEW_SCRIPT="$(dirname "$0")/../lib/preview.sh"
+    # Check relative to script (installed with prefix)
+    elif [ -f "$(dirname "$0")/../lib/yt-bg/preview.sh" ]; then
+        PREVIEW_SCRIPT="$(dirname "$0")/../lib/yt-bg/preview.sh"
     # Check standard install location
     elif [ -f "/usr/local/lib/yt-bg/preview.sh" ]; then
         PREVIEW_SCRIPT="/usr/local/lib/yt-bg/preview.sh"
