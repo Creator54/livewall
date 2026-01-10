@@ -65,6 +65,7 @@
               pkgs.swaybg
               pkgs.kitty
               pkgs.xdg-utils
+              pkgs.axel
             ]} \
             --set MPRIS_SCRIPT_PATH "${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so"
         '';
@@ -91,6 +92,7 @@
           procps # pkill, pgrep
           swaybg # for restoring background
           kitty # for kitten icat
+          axel # for faster downloads
 
           # Script dependencies
           gawk
