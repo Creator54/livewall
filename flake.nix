@@ -107,6 +107,7 @@
           export PATH=$PWD/bin:$PWD/lib:$PATH
           export MPRIS_SCRIPT_PATH="${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so"
           export QUALITY_SCRIPT_PATH="$PWD/lib/quality-cycle.lua"
+          export PREVIEW_SCRIPT_PATH="$PWD/lib/preview.sh"
           echo "🎥 yt-bg environment loaded!"
           echo "Run 'yt-bg' to start searching."
         '';

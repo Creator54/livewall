@@ -65,52 +65,68 @@ log() {
     echo "[$(date)] $1" >> "$LOG_FILE"
 }
 
+# Zen Browser (Firefox-based) profile detection for cookies
+ZEN_PROFILE_DIR="$HOME/.zen"
+ZEN_PROFILE=""
+if [ -d "$ZEN_PROFILE_DIR" ]; then
+    # Find the first directory ending in ".Default Profile"
+    for dir in "$ZEN_PROFILE_DIR/"*".Default Profile"; do
+        if [ -d "$dir" ]; then
+            ZEN_PROFILE="$dir"
+            break
+        fi
+    done
+fi
+
+declare -a COOKIE_ARGS
+if [ -n "$ZEN_PROFILE" ]; then
+    # We found a profile, use it
+    # Add User-Agent to match the playback script and avoid throttling
+    UA="Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0"
+    COOKIE_ARGS=("--cookies-from-browser" "firefox:$ZEN_PROFILE" "--user-agent" "$UA")
+fi
+
 log "Searching for: $QUERY"
-echo "Searching..."
 
-# Fetch results with yt-dlp
-# Structure: Title<TAB>Channel<TAB>Duration<TAB>URL<TAB>VideoID
-# Using TAB as delimiter is safer than pipes for titles
-RESULTS_FILE="/tmp/yt-results.txt"
-
-# Optimization: --flat-playlist is much faster but gives no thumbnails.
-# We will construct thumbnail URLs manually using the VideoID.
-# Use ANSI-C quoting to ensure tabs are passed as actual tab characters
-# We use awk to deduplicate by VideoID (last field)
-yt-dlp "ytsearch20:$QUERY" \
-  --print $'%(title)s\t%(channel)s\t%(duration_string)s\t%(webpage_url)s\t%(id)s' \
-  --flat-playlist --no-warnings | awk -F'\t' '!seen[$NF]++' > "$RESULTS_FILE"
-
-if [ ! -s "$RESULTS_FILE" ]; then
-  echo "No results found."
-  sleep 2
-  exit 1
-fi
-
-# Find the absolute path to the preview script
-# We prioritize the environment variable (set by wrapper)
-if [ -n "$PREVIEW_SCRIPT_PATH" ]; then
-    PREVIEW_SCRIPT="$PREVIEW_SCRIPT_PATH"
-else
-    # Fallback for development mode
-    SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-    if [ -f "$SCRIPT_DIR/../lib/preview.sh" ]; then
-        PREVIEW_SCRIPT="$SCRIPT_DIR/../lib/preview.sh"
-    elif [ -f "./lib/preview.sh" ]; then
-        PREVIEW_SCRIPT="./lib/preview.sh"
-    else
-        PREVIEW_SCRIPT="bash $SCRIPT_DIR/preview.sh"
+# Construct yt-dlp command based on query
+# If query is "rec" or "feed", fetch recommendations (requires cookies)
+if [[ "$QUERY" == "rec" || "$QUERY" == "feed" ]]; then
+    if [ ${#COOKIE_ARGS[@]} -eq 0 ]; then
+        echo "Error: Recommendations require browser cookies (Zen Browser profile not found)."
+        exit 1
     fi
-fi
+    echo "Fetching recommendations..."
 
-# Select with FZF
-# delimiter is TAB, we show Title (1st field) in the list
-# Preview on top so thumbnail is visible above the list
-SELECTED=$(cat "$RESULTS_FILE" | fzf \
-  --delimiter=$'\t' \
-  --with-nth=1 \
-  --preview "$PREVIEW_SCRIPT {}" \
-  --preview-window=up:60%)
+    # Fetch and Stream to FZF (Recommendations)
+    # We use --no-mouse to prevent accidental clicks from selecting/printing text if that's the issue
+    SELECTED=$(yt-dlp "${COOKIE_ARGS[@]}" \
+      --print $'%(title)s\t%(channel)s\t%(duration_string)s\t%(webpage_url)s\t%(id)s' \
+      --flat-playlist --no-warnings \
+      "https://www.youtube.com/feed/recommended" \
+      | awk -F'\t' '!seen[$NF]++ {print; fflush()}' \
+      | fzf \
+        --delimiter=$'\t' \
+        --with-nth=1 \
+        --no-mouse \
+        --preview "${PREVIEW_SCRIPT_PATH:-preview.sh} {}" \
+        --preview-window=up:60%)
+
+else
+    echo "Searching..."
+
+    # Fetch and Stream to FZF (Search)
+    SELECTED=$(yt-dlp "${COOKIE_ARGS[@]}" \
+      --print $'%(title)s\t%(channel)s\t%(duration_string)s\t%(webpage_url)s\t%(id)s' \
+      --flat-playlist --no-warnings \
+      "ytsearch20:$QUERY" \
+      | awk -F'\t' '!seen[$NF]++ {print; fflush()}' \
+      | fzf \
+        --delimiter=$'\t' \
+        --with-nth=1 \
+        --no-mouse \
+        --preview "${PREVIEW_SCRIPT_PATH:-preview.sh} {}" \
+        --preview-window=up:60%)
+fi
 
 if [ -n "$SELECTED" ]; then
   log "Selected raw: $SELECTED"
@@ -121,6 +137,9 @@ if [ -n "$SELECTED" ]; then
   # The format is: Title... Channel Duration URL ID
   # So URL is always second to last, ID is last.
   URL=$(echo "$SELECTED" | awk -F'\t' '{print $(NF-1)}')
+
+  # Trim whitespace just in case
+  URL=$(echo "$URL" | xargs)
 
   log "Extracted URL: $URL"
 

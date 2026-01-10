@@ -6,18 +6,48 @@ SOCKET="/tmp/live-wallpaper-socket"
 LOG_FILE="/tmp/yt-bg-control.log"
 QUALITY_FILE="/tmp/yt-bg-quality"
 
+# Zen Browser (Firefox-based) profile detection for cookies
+ZEN_PROFILE_DIR="$HOME/.zen"
+ZEN_PROFILE=""
+if [ -d "$ZEN_PROFILE_DIR" ]; then
+    # Find the first directory ending in ".Default Profile"
+    for dir in "$ZEN_PROFILE_DIR/"*".Default Profile"; do
+        if [ -d "$dir" ]; then
+            ZEN_PROFILE="$dir"
+            break
+        fi
+    done
+fi
+
+COOKIE_OPTS=""
+if [ -n "$ZEN_PROFILE" ]; then
+    # Create a symlink to avoid space issues in MPV/yt-dlp options (e.g. "Default Profile")
+    rm -f /tmp/zen-profile
+    ln -s "$ZEN_PROFILE" /tmp/zen-profile
+
+    # Write complex options to a config file to avoid CLI parsing issues with spaces/semicolons
+    echo "ytdl-raw-options-append=cookies-from-browser=firefox:/tmp/zen-profile" > /tmp/yt-bg-mpv.conf
+    echo "ytdl-raw-options-append=user-agent=Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0" >> /tmp/yt-bg-mpv.conf
+
+    COOKIE_OPTS="--include=/tmp/yt-bg-mpv.conf"
+fi
+
+# Performance Flags:
+# --cache=yes --demuxer-max-bytes=512M: Aggressive buffering for high-speed connections
+# --demuxer-max-back-bytes=100M: Allow seeking back without re-downloading
+PERF_FLAGS="--cache=yes --demuxer-max-bytes=512M --demuxer-max-back-bytes=100M $COOKIE_OPTS"
+
 # Quality Definitions
 # default: 1080p
-# We exclude AV1 if possible for better hardware decoding compatibility on some systems
-# We also disable hardware decoding (--hwdec=no) to prevent "Cannot load libcuda.so.1" crashes
-# on systems where drivers aren't mapped into the nix environment.
+# We exclude AV1 ([vcodec!^=av01]) because we are forcing software decoding (--hwdec=no).
+# AV1 software decoding is very CPU intensive and causes stuttering/freezing.
 get_quality_opts() {
     case "$1" in
-        "best") echo "--ytdl-format=bestvideo+bestaudio/best --hwdec=no" ;;
-        "1080p") echo "--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080] --hwdec=no" ;;
-        "720p") echo "--ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720] --hwdec=no" ;;
-        "480p") echo "--ytdl-format=bestvideo[height<=480]+bestaudio/best[height<=480] --hwdec=no" ;;
-        *) echo "--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080] --hwdec=no" ;; # Default 1080p
+        "best") echo "--ytdl-format=bestvideo[vcodec!^=av01]+bestaudio/best --hwdec=no $PERF_FLAGS" ;;
+        "1080p") echo "--ytdl-format=bestvideo[height<=1080][vcodec!^=av01]+bestaudio/best[height<=1080] --hwdec=no $PERF_FLAGS" ;;
+        "720p") echo "--ytdl-format=bestvideo[height<=720][vcodec!^=av01]+bestaudio/best[height<=720] --hwdec=no $PERF_FLAGS" ;;
+        "480p") echo "--ytdl-format=bestvideo[height<=480][vcodec!^=av01]+bestaudio/best[height<=480] --hwdec=no $PERF_FLAGS" ;;
+        *) echo "--ytdl-format=bestvideo[height<=1080][vcodec!^=av01]+bestaudio/best[height<=1080] --hwdec=no $PERF_FLAGS" ;;
     esac
 }
 
