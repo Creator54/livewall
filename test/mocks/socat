@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called socat with: $*" >> "$LOG_FILE"
+if [ ! -t 0 ]; then
+    INPUT=$(cat)
+    echo "socat stdin: $INPUT" >> "$LOG_FILE"
+
+    # Mock responses for properties
+    if [[ "$INPUT" == *"get_property"* ]]; then
+        if [[ "$INPUT" == *"path"* ]]; then
+             echo '{"data": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'
+        elif [[ "$INPUT" == *"time-pos"* ]]; then
+             echo '{"data": "42.0"}'
+        elif [[ "$INPUT" == *"pause"* ]]; then
+             echo '{"data": "no"}'
+        elif [[ "$INPUT" == *"media-title"* ]]; then
+             echo '{"data": "Rick Astley - Never Gonna Give You Up"}'
+        else
+             echo '{"data": null}'
+        fi
+    fi
+fi

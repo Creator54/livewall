@@ -6,16 +6,17 @@ LOG_FILE="/tmp/yt-bg-preview.log"
 mkdir -p "$CACHE_DIR"
 
 # Log raw input for debugging
-# echo "=== Preview called at $(date) ===" >> "$LOG_FILE"
-# echo "Raw input: $*" >> "$LOG_FILE"
+echo "=== Preview called at $(date) ===" >> "$LOG_FILE"
+echo "Raw input: $*" >> "$LOG_FILE"
 
 LINE="$*"
 
 # Split fields by TAB
-TITLE=$(echo "$LINE" | cut -f1)
-CHANNEL=$(echo "$LINE" | cut -f2)
-DURATION=$(echo "$LINE" | cut -f3)
-VIDEO_ID=$(echo "$LINE" | cut -f5)
+# Handle potential tabs in title by indexing from the end
+TITLE=$(echo "$LINE" | awk -F'\t' '{for(i=1;i<=NF-4;i++) printf "%s ", $i; print ""}')
+CHANNEL=$(echo "$LINE" | awk -F'\t' '{print $(NF-3)}')
+DURATION=$(echo "$LINE" | awk -F'\t' '{print $(NF-2)}')
+VIDEO_ID=$(echo "$LINE" | awk -F'\t' '{print $NF}')
 
 # Construct thumbnail URL from video ID
 if [ -n "$VIDEO_ID" ] && [ "$VIDEO_ID" != "NA" ]; then
@@ -29,7 +30,8 @@ if [ -n "$VIDEO_ID" ] && [ "$VIDEO_ID" != "NA" ]; then
 
     # Display image using Kitty ICAT
     if [ -s "$IMG" ]; then
-        kitten icat --clear --transfer-mode=file --stdin=no "$IMG" > /dev/tty 2>>"$LOG_FILE"
+        TTY_DEV="${TTY_DEV:-/dev/tty}"
+        kitten icat --clear --transfer-mode=file --stdin=no "$IMG" > "$TTY_DEV" 2>>"$LOG_FILE"
     fi
 else
     # echo "No valid video ID found" >> "$LOG_FILE"

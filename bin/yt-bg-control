@@ -11,6 +11,7 @@ LOG_FILE="/tmp/yt-bg-control.log"
 MPV_OPTS="--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080]"
 
 log() {
+  echo "[LOG] $1" >&2
   echo "[$(date '+%H:%M:%S')] $1" >> "$LOG_FILE"
 }
 
@@ -97,7 +98,10 @@ case "$1" in
        mpv --input-ipc-server=$SOCKET --loop --title="Live Wallpaper PiP" --force-window $START_OPT $SCRIPT_OPT $MPV_OPTS "$URL" >> "$LOG_FILE" 2>&1 &
 
        # Restore static wallpaper behind it
-       (sleep 1; swaybg -m fill -i ~/.current_wallpaper &) &
+       # Check if wallpaper file exists, otherwise skip or use a default color if desired (omitted for now)
+       if [ -f "$HOME/.current_wallpaper" ]; then
+           (sleep 1; swaybg -m fill -i "$HOME/.current_wallpaper" &) &
+       fi
 
     elif pgrep -f "mpv.*$SOCKET"; then
        # Switch back to Wallpaper
@@ -128,9 +132,16 @@ case "$1" in
   "download")
     URL=$(get_prop "path")
     TITLE=$(get_prop "media-title")
+    TERMINAL="${TERMINAL:-kitty}"
+
     if [ -n "$URL" ] && [ "$URL" != "null" ]; then
        notify-send "Wallpaper" "Downloading: $TITLE"
-       kitty --class floating-term --hold -e sh -c "yt-dlp --external-downloader axel --external-downloader-args '-n 10' -o '$HOME/Downloads/%(title)s.%(ext)s' '$URL'; echo \"\"; echo 'Download finished. Press Enter to close.'; read" &
+
+       if command -v "$TERMINAL" > /dev/null; then
+            $TERMINAL --class floating-term --hold -e sh -c "yt-dlp --external-downloader axel --external-downloader-args '-n 10' -o '$HOME/Downloads/%(title)s.%(ext)s' '$URL'; echo \"\"; echo 'Download finished. Press Enter to close.'; read" &
+       else
+            notify-send "Error" "Terminal '$TERMINAL' not found for download."
+       fi
     else
        notify-send "Error" "No video playing"
     fi

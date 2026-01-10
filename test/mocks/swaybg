@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called swaybg with: $*" >> "$LOG_FILE"

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called yt-dlp with: $*" >> "$LOG_FILE"
+# output fake search results
+# Title<TAB>Channel<TAB>Duration<TAB>URL<TAB>VideoID
+echo -e "Rick Astley - Never Gonna Give You Up\tRickAstleyVEVO\t3:33\thttps://www.youtube.com/watch?v=dQw4w9WgXcQ\tdQw4w9WgXcQ"

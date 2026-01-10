@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called pkill with: $*" >> "$LOG_FILE"
+if [[ "$*" == *"mpvpaper"* ]]; then
+    rm -f "/tmp/mock_mpvpaper_running"
+fi
+if [[ "$*" == *"mpv"* ]]; then
+    rm -f "/tmp/mock_mpv_running"
+fi
+exit 0

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called fzf with: $*" >> "$LOG_FILE"
+# Read stdin to drain it
+cat > /dev/null
+# Return the first line of our fake output (simulating user selection)
+if [ -n "$MOCK_FZF_OUTPUT" ]; then
+    echo -e "$MOCK_FZF_OUTPUT"
+else
+    echo -e "Rick Astley - Never Gonna Give You Up\tRickAstleyVEVO\t3:33\thttps://www.youtube.com/watch?v=dQw4w9WgXcQ\tdQw4w9WgXcQ"
+fi

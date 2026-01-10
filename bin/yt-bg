@@ -8,9 +8,13 @@ if ! command -v yt-dlp &> /dev/null; then
     exit 1
 fi
 
-# Ask for query
-echo -ne "\033[1;34mSearch YouTube: \033[0m"
-read QUERY
+# Ask for query if not provided as argument
+if [ -n "$1" ]; then
+    QUERY="$*"
+else
+    echo -ne "\033[1;34mSearch YouTube: \033[0m"
+    read QUERY
+fi
 
 if [ -z "$QUERY" ]; then
   exit 0
@@ -21,7 +25,12 @@ CACHE_DIR="/tmp/yt-wall-thumbs"
 LOG_FILE="/tmp/yt-bg-search.log"
 mkdir -p "$CACHE_DIR"
 
-echo "[$(date)] Searching for: $QUERY" > "$LOG_FILE"
+log() {
+    echo "[LOG] $1" >&2
+    echo "[$(date)] $1" >> "$LOG_FILE"
+}
+
+log "Searching for: $QUERY"
 echo "Searching..."
 
 # Fetch results with yt-dlp
@@ -67,17 +76,24 @@ SELECTED=$(cat "$RESULTS_FILE" | fzf \
   --preview-window=up:60%)
 
 if [ -n "$SELECTED" ]; then
-  echo "[$(date)] Selected raw: $SELECTED" >> "$LOG_FILE"
+  log "Selected raw: $SELECTED"
 
   # Extract URL (4th field)
   # Use awk for more robust tab separation
-  URL=$(echo "$SELECTED" | awk -F'\t' '{print $4}')
+  # Fix: Use $(NF-1) because tabs in titles shift the columns.
+  # The format is: Title... Channel Duration URL ID
+  # So URL is always second to last, ID is last.
+  URL=$(echo "$SELECTED" | awk -F'\t' '{print $(NF-1)}')
 
-  echo "[$(date)] Extracted URL: $URL" >> "$LOG_FILE"
+  log "Extracted URL: $URL"
 
   if [[ "$URL" != http* ]]; then
-       echo "[$(date)] ERROR: URL does not start with http" >> "$LOG_FILE"
-       notify-send "Error" "Failed to extract valid URL"
+       log "ERROR: URL does not start with http"
+       log "Awk Debug: Number of fields: $(echo "$SELECTED" | awk -F'\t' '{print NF}')"
+       log "Awk Debug: Last field (ID): $(echo "$SELECTED" | awk -F'\t' '{print $NF}')"
+       log "Awk Debug: 2nd to last (URL): $(echo "$SELECTED" | awk -F'\t' '{print $(NF-1)}')"
+
+       notify-send "Error" "Failed to extract valid URL. Check CLI output."
        exit 1
   fi
 

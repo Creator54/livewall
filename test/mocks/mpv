@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called mpv with: $*" >> "$LOG_FILE"
+touch /tmp/mock_mpv_running
+exit 0

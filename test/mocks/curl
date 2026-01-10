@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called curl with: $*" >> "$LOG_FILE"
+# Check if -o is used and write to the file following it
+args=("$@")
+for ((i=0; i<${#args[@]}; i++)); do
+    if [[ "${args[i]}" == "-o" ]]; then
+        outfile="${args[i+1]}"
+        echo "dummy image content" > "$outfile"
+        break
+    fi
+done

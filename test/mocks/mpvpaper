@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called mpvpaper with: $*" >> "$LOG_FILE"
+# Simulate success and running in background
+touch /tmp/mock_mpvpaper_running
+exit 0

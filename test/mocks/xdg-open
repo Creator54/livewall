@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called xdg-open with: $*" >> "$LOG_FILE"

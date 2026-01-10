@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/yt-bg-test.log"
+echo "Called pgrep with: $*" >> "$LOG_FILE"
+if [[ "$*" == *"mpvpaper"* ]]; then
+    if [[ -f "/tmp/mock_mpvpaper_running" ]]; then
+        exit 0
+    else
+        exit 1
+    fi
+elif [[ "$*" == *"mpv"* ]]; then
+    if [[ -f "/tmp/mock_mpv_running" ]]; then
+        exit 0
+    else
+        exit 1
+    fi
+else
+    exit 1
+fi
