@@ -414,4 +414,83 @@ fi
 
 unset QUALITY_SCRIPT_PATH
 
+# Test 18: History Logging
+echo "Test 18: History Logging"
+# Cleanup mock state to force new instance (and thus "Called mpvpaper...")
+rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running /tmp/live-wallpaper-socket
+
+# Define a test history file
+export HOME="/tmp/yt-bg-test-home"
+mkdir -p "$HOME/.local/share/yt-bg"
+HISTORY_FILE="$HOME/.local/share/yt-bg/history"
+rm -f "$HISTORY_FILE"
+
+# Run a search that selects a video (we mock fzf output via pipe)
+# We need to simulate the user selection
+# Title<TAB>Channel<TAB>Duration<TAB>URL<TAB>ID
+# Note: yt-bg expects fzf to output the selection.
+# But `yt-bg` calls `cat results | fzf`.
+# To mock this without interactive fzf, we need to mock fzf itself?
+# The current test suite mocks fzf in `test/mocks/fzf`.
+# Let's check `test/mocks/fzf`.
+
+# Read mock fzf logic
+# It outputs $MOCK_FZF_OUTPUT if set, otherwise echoes input.
+
+# So we can set MOCK_FZF_OUTPUT to simulate selection.
+export MOCK_FZF_OUTPUT="History Video	History Channel	5:00	https://youtube.com/watch?v=HIST	HIST_ID"
+
+# Run yt-bg
+echo "History Search" | yt-bg
+
+if [ -f "$HISTORY_FILE" ]; then
+    if grep -q "History Video" "$HISTORY_FILE"; then
+        echo "PASS: History logged correctly"
+    else
+        echo "FAIL: History file exists but content missing"
+        cat "$HISTORY_FILE"
+        exit 1
+    fi
+else
+    echo "FAIL: History file not created"
+    exit 1
+fi
+unset MOCK_FZF_OUTPUT
+
+# Test 19: History Replay
+echo "Test 19: History Replay"
+# Now we run `yt-bg history`. It calls `tac history | fzf`.
+# We need fzf to select one line.
+# We'll use MOCK_FZF_OUTPUT to simulate the user picking a line from history.
+# The input to fzf will be the history file content (reversed).
+# The output of fzf should be the full line.
+# We want to select the line we just added.
+# History format: Date<TAB>Title...
+# So our mock output needs to match that format.
+
+# Read the line we just wrote to get the exact timestamp
+SAVED_LINE=$(cat "$HISTORY_FILE")
+export MOCK_FZF_OUTPUT="$SAVED_LINE"
+
+# Run history command
+yt-bg history
+
+# Verify play was called
+# Note: yt-bg history extracts the URL from the selected line.
+# URL is 2nd to last field.
+# Saved Line: Date \t Title \t Channel \t Duration \t URL \t ID
+# URL is correct.
+
+sleep 0.5
+if grep -q "Called mpvpaper with:.*https://youtube.com/watch?v=HIST" "$LOG_FILE"; then
+    echo "PASS: History replay triggered correct URL"
+else
+    echo "FAIL: History replay failed"
+    grep "Called mpvpaper" "$LOG_FILE" || true
+    exit 1
+fi
+
+unset MOCK_FZF_OUTPUT
+rm -rf "$HOME/.local/share/yt-bg"
+
 echo "=== All Tests Passed ==="

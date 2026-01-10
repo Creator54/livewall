@@ -39,6 +39,9 @@ yt-bg
 
 # Direct search (skips prompt)
 yt-bg "lofi hip hop radio"
+
+# View and replay history
+yt-bg history
 ```
 
 Use `Up`/`Down` to navigate results and `Enter` to select. The video will start playing as your wallpaper.

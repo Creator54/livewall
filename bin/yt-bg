@@ -1,6 +1,41 @@
 #!/usr/bin/env bash
 # yt-bg: Search YouTube and play video as wallpaper
-# Usage: yt-bg
+# Usage: yt-bg [query|history]
+
+HISTORY_FILE="$HOME/.local/share/yt-bg/history"
+mkdir -p "$(dirname "$HISTORY_FILE")"
+
+# History Mode
+if [ "$1" == "history" ]; then
+    if [ ! -s "$HISTORY_FILE" ]; then
+        echo "No history found."
+        exit 0
+    fi
+
+    # Display history in reverse order (newest first)
+    # Using tac to reverse, and fzf for selection
+    # Format in history: Timestamp<TAB>Title<TAB>Channel<TAB>Duration<TAB>URL<TAB>ID
+    SELECTED=$(tac "$HISTORY_FILE" | fzf \
+      --delimiter=$'\t' \
+      --with-nth=2 \
+      --preview-window=up:60% \
+      --header="Select to Replay" \
+      --prompt="History> ")
+
+    if [ -n "$SELECTED" ]; then
+        # Extract URL (5th field in history file)
+        # History format: Date \t Title \t Channel \t Duration \t URL \t ID
+        URL=$(echo "$SELECTED" | awk -F'\t' '{print $(NF-1)}')
+
+        # Log this replay as a new entry? Yes, brings it to top.
+        # But we need the original full line data to re-log it properly?
+        # Simpler: just play it. If we want to bring to top, we'd need to parse more fields.
+        # Let's just play it for now.
+
+        yt-bg-control play "$URL"
+    fi
+    exit 0
+fi
 
 # Ensure we are in the flake env or have dependencies
 if ! command -v yt-dlp &> /dev/null; then
@@ -97,6 +132,11 @@ if [ -n "$SELECTED" ]; then
        notify-send "Error" "Failed to extract valid URL. Check CLI output."
        exit 1
   fi
+
+  # Log to history
+  # Format: Date<TAB>OriginalLine
+  TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
+  echo -e "${TIMESTAMP}\t${SELECTED}" >> "$HISTORY_FILE"
 
   # Call control script to play
   # We assume yt-bg-control is in PATH (added by flake shellHook)
