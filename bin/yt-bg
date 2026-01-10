@@ -2,6 +2,20 @@
 # yt-bg: Search YouTube and play video as wallpaper
 # Usage: yt-bg [query|history]
 
+# Resolve Preview Script Path
+PREVIEW_SCRIPT="${PREVIEW_SCRIPT_PATH:-}"
+if [ -z "$PREVIEW_SCRIPT" ]; then
+    # Check relative to script (source/nix)
+    if [ -f "$(dirname "$0")/../lib/preview.sh" ]; then
+        PREVIEW_SCRIPT="$(dirname "$0")/../lib/preview.sh"
+    # Check standard install location
+    elif [ -f "/usr/local/lib/yt-bg/preview.sh" ]; then
+        PREVIEW_SCRIPT="/usr/local/lib/yt-bg/preview.sh"
+    else
+        PREVIEW_SCRIPT="preview.sh"
+    fi
+fi
+
 HISTORY_FILE="$HOME/.local/share/yt-bg/history"
 mkdir -p "$(dirname "$HISTORY_FILE")"
 
@@ -108,7 +122,7 @@ if [[ "$QUERY" == "rec" || "$QUERY" == "feed" ]]; then
         --delimiter=$'\t' \
         --with-nth=1 \
         --no-mouse \
-        --preview "${PREVIEW_SCRIPT_PATH:-preview.sh} {}" \
+        --preview "$PREVIEW_SCRIPT {}" \
         --preview-window=up:60%)
 
 else
@@ -124,7 +138,7 @@ else
         --delimiter=$'\t' \
         --with-nth=1 \
         --no-mouse \
-        --preview "${PREVIEW_SCRIPT_PATH:-preview.sh} {}" \
+        --preview "$PREVIEW_SCRIPT {}" \
         --preview-window=up:60%)
 fi
 

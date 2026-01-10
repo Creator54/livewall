@@ -28,6 +28,26 @@ nix develop
 ./bin/yt-bg
 ```
 
+### Manual Installation (Non-Nix)
+If you are not using Nix, you can install the tool globally (to `/usr/local/` by default).
+
+**Dependencies**: Ensure you have the following installed: `mpvpaper`, `mpv`, `yt-dlp`, `socat`, `jq`, `fzf`, `swaybg`.
+
+```bash
+# Install to /usr/local/bin and /usr/local/lib
+sudo make install
+
+# Custom prefix
+sudo make install PREFIX=/usr
+```
+
+### Uninstallation
+To cleanly remove all installed files:
+
+```bash
+sudo make uninstall
+```
+
 ## Usage
 
 ### 1. Search & Play

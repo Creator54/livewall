@@ -60,8 +60,20 @@ MPV_OPTS=$(get_quality_opts "$CURRENT_QUALITY")
 
 # Prepare Script Options
 QUALITY_SCRIPT_OPT=""
-if [ -n "$QUALITY_SCRIPT_PATH" ] && [ -f "$QUALITY_SCRIPT_PATH" ]; then
-    QUALITY_SCRIPT_OPT="--script=$QUALITY_SCRIPT_PATH"
+# Resolve Quality Script Path
+QUALITY_SCRIPT="${QUALITY_SCRIPT_PATH:-}"
+if [ -z "$QUALITY_SCRIPT" ]; then
+    # Check relative to script (source/nix)
+    if [ -f "$(dirname "$0")/../lib/quality-cycle.lua" ]; then
+        QUALITY_SCRIPT="$(dirname "$0")/../lib/quality-cycle.lua"
+    # Check standard install location
+    elif [ -f "/usr/local/lib/yt-bg/quality-cycle.lua" ]; then
+        QUALITY_SCRIPT="/usr/local/lib/yt-bg/quality-cycle.lua"
+    fi
+fi
+
+if [ -n "$QUALITY_SCRIPT" ] && [ -f "$QUALITY_SCRIPT" ]; then
+    QUALITY_SCRIPT_OPT="--script=$QUALITY_SCRIPT"
 fi
 
 log() {
