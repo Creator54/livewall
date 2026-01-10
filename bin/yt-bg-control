@@ -217,7 +217,13 @@ case "$1" in
        notify-send "Wallpaper" "Downloading: $TITLE"
 
        if command -v "$TERMINAL" > /dev/null; then
-            $TERMINAL --class floating-term --hold -e sh -c "yt-dlp --external-downloader axel --external-downloader-args '-n 10' -o '$HOME/Downloads/%(title)s.%(ext)s' '$URL'; echo \"\"; echo 'Download finished. Press Enter to close.'; read" &
+            # Check for axel
+            DL_ARGS=""
+            if command -v axel > /dev/null; then
+                DL_ARGS="--external-downloader axel --external-downloader-args '-n 10'"
+            fi
+
+            $TERMINAL --class floating-term --hold -e sh -c "yt-dlp $DL_ARGS -o '$HOME/Downloads/%(title)s.%(ext)s' '$URL'; echo \"\"; echo 'Download finished. Press Enter to close.'; read" &
        else
             notify-send "Error" "Terminal '$TERMINAL' not found for download."
        fi
