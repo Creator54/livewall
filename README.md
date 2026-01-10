@@ -59,7 +59,7 @@ Use `yt-bg-control` to manage the active video. It is recommended to bind these 
 
 ### 3. Native Player Shortcuts
 When the PiP window is focused, you can use these keys directly:
-- **`q`**: Cycle video quality (1080p -> 720p -> 480p -> Best)
+- **`Alt+Shift+Q`**: Cycle video quality (1080p -> 720p -> 480p -> Best)
 
 ### 4. Example Niri Configuration
 Add these binds to your `~/.config/niri/config.kdl`:

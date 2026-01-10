@@ -84,5 +84,5 @@ local function cycle_quality()
     end
 end
 
--- Bind 'q' key
-mp.add_key_binding("q", "cycle-quality", cycle_quality)
+-- Bind 'Alt+Shift+Q' key
+mp.add_key_binding("Alt+Shift+Q", "cycle-quality", cycle_quality)
