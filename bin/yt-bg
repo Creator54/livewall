@@ -42,15 +42,19 @@ if [ ! -s "$RESULTS_FILE" ]; then
 fi
 
 # Find the absolute path to the preview script
-# We look in the same directory as this script, or ../lib if we are in bin
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-if [ -f "$SCRIPT_DIR/../lib/preview.sh" ]; then
-    PREVIEW_SCRIPT="$SCRIPT_DIR/../lib/preview.sh"
-elif [ -f "./lib/preview.sh" ]; then
-    PREVIEW_SCRIPT="./lib/preview.sh"
+# We prioritize the environment variable (set by wrapper)
+if [ -n "$PREVIEW_SCRIPT_PATH" ]; then
+    PREVIEW_SCRIPT="$PREVIEW_SCRIPT_PATH"
 else
-    # Fallback: assume it's in PATH or same dir
-    PREVIEW_SCRIPT="bash $SCRIPT_DIR/preview.sh"
+    # Fallback for development mode
+    SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+    if [ -f "$SCRIPT_DIR/../lib/preview.sh" ]; then
+        PREVIEW_SCRIPT="$SCRIPT_DIR/../lib/preview.sh"
+    elif [ -f "./lib/preview.sh" ]; then
+        PREVIEW_SCRIPT="./lib/preview.sh"
+    else
+        PREVIEW_SCRIPT="bash $SCRIPT_DIR/preview.sh"
+    fi
 fi
 
 # Select with FZF
