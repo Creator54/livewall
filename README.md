@@ -51,12 +51,17 @@ Use `yt-bg-control` to manage the active video. It is recommended to bind these 
 | `yt-bg-control toggle-pip` | Switch between Wallpaper and Floating Window (PiP) |
 | `yt-bg-control toggle-pause` | Pause/Resume playback |
 | `yt-bg-control toggle-mute` | Mute/Unmute audio |
+| `yt-bg-control cycle-quality` | Cycle quality (1080p -> 720p -> 480p -> Best) |
 | `yt-bg-control seek-forward` | Seek forward 10 seconds |
 | `yt-bg-control seek-backward` | Seek backward 10 seconds |
 | `yt-bg-control download` | Download the current video (to `~/Downloads`) |
 | `yt-bg-control open` | Open the current video in your default browser |
 
-### 3. Example Niri Configuration
+### 3. Native Player Shortcuts
+When the PiP window is focused, you can use these keys directly:
+- **`q`**: Cycle video quality (1080p -> 720p -> 480p -> Best)
+
+### 4. Example Niri Configuration
 Add these binds to your `~/.config/niri/config.kdl`:
 
 ```kdl

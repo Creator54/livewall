@@ -28,6 +28,7 @@
           cp bin/yt-bg $out/bin/
           cp bin/yt-bg-control $out/bin/
           cp lib/preview.sh $out/lib/
+          cp lib/quality-cycle.lua $out/lib/
 
           chmod +x $out/bin/* $out/lib/*
         '';
@@ -69,7 +70,8 @@
               pkgs.xdg-utils
               pkgs.axel
             ]} \
-            --set MPRIS_SCRIPT_PATH "${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so"
+            --set MPRIS_SCRIPT_PATH "${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so" \
+            --set QUALITY_SCRIPT_PATH "$out/lib/quality-cycle.lua"
         '';
       };
     in
@@ -104,6 +106,7 @@
         shellHook = ''
           export PATH=$PWD/bin:$PWD/lib:$PATH
           export MPRIS_SCRIPT_PATH="${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so"
+          export QUALITY_SCRIPT_PATH="$PWD/lib/quality-cycle.lua"
           echo "🎥 yt-bg environment loaded!"
           echo "Run 'yt-bg' to start searching."
         '';

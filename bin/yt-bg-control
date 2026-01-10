@@ -4,11 +4,33 @@
 
 SOCKET="/tmp/live-wallpaper-socket"
 LOG_FILE="/tmp/yt-bg-control.log"
+QUALITY_FILE="/tmp/yt-bg-quality"
 
-# Optimization: Limit to 1080p to prevent stuttering/slow loading
-# We exclude AV1 if possible for better hardware decoding compatibility on some systems,
-# but generic 'bestvideo' usually works if limited by height.
-MPV_OPTS="--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+# Quality Definitions
+# default: 1080p
+# We exclude AV1 if possible for better hardware decoding compatibility on some systems
+get_quality_opts() {
+    case "$1" in
+        "best") echo "--ytdl-format=bestvideo+bestaudio/best" ;;
+        "1080p") echo "--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080]" ;;
+        "720p") echo "--ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720]" ;;
+        "480p") echo "--ytdl-format=bestvideo[height<=480]+bestaudio/best[height<=480]" ;;
+        *) echo "--ytdl-format=bestvideo[height<=1080]+bestaudio/best[height<=1080]" ;; # Default 1080p
+    esac
+}
+
+# Get current quality preference, default to 1080p if not set
+CURRENT_QUALITY="1080p"
+if [ -f "$QUALITY_FILE" ]; then
+    CURRENT_QUALITY=$(cat "$QUALITY_FILE")
+fi
+MPV_OPTS=$(get_quality_opts "$CURRENT_QUALITY")
+
+# Prepare Script Options
+QUALITY_SCRIPT_OPT=""
+if [ -n "$QUALITY_SCRIPT_PATH" ] && [ -f "$QUALITY_SCRIPT_PATH" ]; then
+    QUALITY_SCRIPT_OPT="--script=$QUALITY_SCRIPT_PATH"
+fi
 
 log() {
   echo "[LOG] $1" >&2
@@ -53,7 +75,7 @@ case "$1" in
 
        # Start mpvpaper
        # CRITICAL: Do NOT use --script=mpris.so with mpvpaper, it crashes.
-       mpvpaper -o "--loop --input-ipc-server=$SOCKET --panscan=1.0 $MPV_OPTS" '*' "$URL" >> "$LOG_FILE" 2>&1 &
+       mpvpaper -o "--loop --input-ipc-server=$SOCKET --panscan=1.0 $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$URL" >> "$LOG_FILE" 2>&1 &
 
        # Check if it started
        sleep 2
@@ -95,7 +117,7 @@ case "$1" in
            SCRIPT_OPT="--script=$MPRIS_SCRIPT_PATH"
        fi
 
-       mpv --input-ipc-server=$SOCKET --loop --title="Live Wallpaper PiP" --force-window $START_OPT $SCRIPT_OPT $MPV_OPTS "$URL" >> "$LOG_FILE" 2>&1 &
+       mpv --input-ipc-server=$SOCKET --loop --title="Live Wallpaper PiP" --force-window $START_OPT $SCRIPT_OPT $QUALITY_SCRIPT_OPT $MPV_OPTS "$URL" >> "$LOG_FILE" 2>&1 &
 
        # Restore static wallpaper behind it
        # Check if wallpaper file exists, otherwise skip or use a default color if desired (omitted for now)
@@ -113,7 +135,7 @@ case "$1" in
        START_OPT=""
        if [ "$POS" != "null" ]; then START_OPT="--start=$POS"; fi
 
-       mpvpaper -o "--loop --input-ipc-server=$SOCKET --panscan=1.0 $START_OPT $MPV_OPTS" '*' "$URL" >> "$LOG_FILE" 2>&1 &
+       mpvpaper -o "--loop --input-ipc-server=$SOCKET --panscan=1.0 $START_OPT $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$URL" >> "$LOG_FILE" 2>&1 &
     fi
     ;;
 
@@ -153,6 +175,42 @@ case "$1" in
        xdg-open "$URL"
     else
        notify-send "Error" "No video playing"
+    fi
+    ;;
+  "cycle-quality")
+    # Cycle order: 1080p -> 720p -> 480p -> best -> 1080p
+    NEXT_QUALITY="1080p"
+    case "$CURRENT_QUALITY" in
+        "1080p") NEXT_QUALITY="720p" ;;
+        "720p") NEXT_QUALITY="480p" ;;
+        "480p") NEXT_QUALITY="best" ;;
+        "best") NEXT_QUALITY="1080p" ;;
+    esac
+
+    # Save preference
+    echo "$NEXT_QUALITY" > "$QUALITY_FILE"
+    notify-send "Wallpaper" "Switching quality to $NEXT_QUALITY..."
+    log "Switching quality from $CURRENT_QUALITY to $NEXT_QUALITY"
+
+    # Reload if playing
+    if [ -S "$SOCKET" ]; then
+        URL=$(get_prop "path")
+        POS=$(get_prop "time-pos")
+
+        if [ "$URL" != "null" ] && [ -n "$URL" ]; then
+            # We can't change ytdl-format on the fly easily without reloading the file.
+            # mpv supports 'set ytdl-format ...' but it only takes effect on next load.
+            NEW_OPTS=$(get_quality_opts "$NEXT_QUALITY")
+            YTDL_FMT=$(echo "$NEW_OPTS" | sed 's/--ytdl-format=//')
+
+            # Send command to update property and reload
+            echo "{ \"command\": [\"set_property\", \"ytdl-format\", \"$YTDL_FMT\"] }" | socat - "$SOCKET" >/dev/null
+
+            # Seek to current position to force reload/re-buffer (or just reload file)
+            # 'loadfile url replace start=POS' is cleanest
+            if [ "$POS" == "null" ]; then POS=0; fi
+            echo "loadfile \"$URL\" replace start=$POS" | socat - "$SOCKET"
+        fi
     fi
     ;;
 esac
