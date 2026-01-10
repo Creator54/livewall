@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# yt-bg: Search YouTube and play video as wallpaper
+# Usage: yt-bg
+
+# Ensure we are in the flake env or have dependencies
+if ! command -v yt-dlp &> /dev/null; then
+    echo "Error: yt-dlp not found. Please run inside 'nix develop'."
+    exit 1
+fi
+
+# Ask for query
+echo -ne "\033[1;34mSearch YouTube: \033[0m"
+read QUERY
+
+if [ -z "$QUERY" ]; then
+  exit 0
+fi
+
+# Cache setup
+CACHE_DIR="/tmp/yt-wall-thumbs"
+LOG_FILE="/tmp/yt-bg-search.log"
+mkdir -p "$CACHE_DIR"
+
+echo "[$(date)] Searching for: $QUERY" > "$LOG_FILE"
+echo "Searching..."
+
+# Fetch results with yt-dlp
+# Structure: Title<TAB>Channel<TAB>Duration<TAB>URL<TAB>VideoID
+# Using TAB as delimiter is safer than pipes for titles
+RESULTS_FILE="/tmp/yt-results.txt"
+
+# Optimization: --flat-playlist is much faster but gives no thumbnails.
+# We will construct thumbnail URLs manually using the VideoID.
+yt-dlp "ytsearch15:$QUERY" \
+  --print "%(title)s\t%(channel)s\t%(duration_string)s\t%(webpage_url)s\t%(id)s" \
+  --flat-playlist --no-warnings > "$RESULTS_FILE"
+
+if [ ! -s "$RESULTS_FILE" ]; then
+  echo "No results found."
+  sleep 2
+  exit 1
+fi
+
+# Find the absolute path to the preview script
+# We look in the same directory as this script, or ../lib if we are in bin
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+if [ -f "$SCRIPT_DIR/../lib/preview.sh" ]; then
+    PREVIEW_SCRIPT="$SCRIPT_DIR/../lib/preview.sh"
+elif [ -f "./lib/preview.sh" ]; then
+    PREVIEW_SCRIPT="./lib/preview.sh"
+else
+    # Fallback: assume it's in PATH or same dir
+    PREVIEW_SCRIPT="bash $SCRIPT_DIR/preview.sh"
+fi
+
+# Select with FZF
+# delimiter is TAB, we show Title (1st field) in the list
+# Preview on top so thumbnail is visible above the list
+SELECTED=$(cat "$RESULTS_FILE" | fzf \
+  --delimiter=$'\t' \
+  --with-nth=1 \
+  --preview "$PREVIEW_SCRIPT {}" \
+  --preview-window=up:60%)
+
+if [ -n "$SELECTED" ]; then
+  echo "[$(date)] Selected raw: $SELECTED" >> "$LOG_FILE"
+
+  # Extract URL (4th field, TAB delimited)
+  URL=$(echo "$SELECTED" | cut -f4)
+
+  echo "[$(date)] Extracted URL: $URL" >> "$LOG_FILE"
+
+  if [[ "$URL" != http* ]]; then
+       echo "[$(date)] ERROR: URL does not start with http" >> "$LOG_FILE"
+       notify-send "Error" "Failed to extract valid URL"
+       exit 1
+  fi
+
+  # Call control script to play
+  # We assume yt-bg-control is in PATH (added by flake shellHook)
+  yt-bg-control play "$URL"
+fi

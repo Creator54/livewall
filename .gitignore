@@ -1,0 +1,11 @@
+# Nix
+.direnv
+.devenv
+.envrc
+result
+
+# Logs
+*.log
+
+# Temp
+tmp/
