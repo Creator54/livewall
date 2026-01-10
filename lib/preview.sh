@@ -52,8 +52,10 @@ if [ -n "$VIDEO_ID" ] && [ "$VIDEO_ID" != "NA" ]; then
 
             # Only draw if we have space
             if [ "$HEIGHT" -gt 2 ]; then
+                # Use scale-up to fill width if possible, but keep aspect ratio
                 kitten icat --clear --transfer-mode=file --stdin=no \
                     --place "${WIDTH}x${HEIGHT}@${LEFT}x${TOP}" \
+                    --scale-up \
                     "$IMG" > "$TTY_DEV" 2>>"$LOG_FILE"
             fi
         else
