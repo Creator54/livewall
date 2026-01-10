@@ -28,22 +28,39 @@ if [ -n "$VIDEO_ID" ] && [ "$VIDEO_ID" != "NA" ]; then
         curl -sL "$THUMB_URL" -o "$IMG" --max-time 5
     fi
 
-    # Display image using Kitty ICAT
+    # Display Text Info nicely formatted (First)
+    echo ""
+    echo -e "\033[1;33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo -e "\033[1;37m$TITLE\033[0m"
+    echo ""
+    echo -e "\033[0;36mChannel:\033[0m $CHANNEL"
+    echo -e "\033[0;32mDuration:\033[0m $DURATION"
+    echo -e "\033[1;33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+
+    # Display image using Kitty ICAT (Second)
     if [ -s "$IMG" ]; then
         TTY_DEV="${TTY_DEV:-/dev/tty}"
-        kitten icat --clear --transfer-mode=file --stdin=no "$IMG" > "$TTY_DEV" 2>>"$LOG_FILE"
+
+        # Use FZF positioning if available
+        if [ -n "$FZF_PREVIEW_TOP" ]; then
+            # Text takes roughly 8 lines
+            OFFSET=8
+            WIDTH="$FZF_PREVIEW_COLUMNS"
+            HEIGHT=$((FZF_PREVIEW_LINES - OFFSET))
+            LEFT="$FZF_PREVIEW_LEFT"
+            TOP=$((FZF_PREVIEW_TOP + OFFSET))
+
+            # Only draw if we have space
+            if [ "$HEIGHT" -gt 2 ]; then
+                kitten icat --clear --transfer-mode=file --stdin=no \
+                    --place "${WIDTH}x${HEIGHT}@${LEFT}x${TOP}" \
+                    "$IMG" > "$TTY_DEV" 2>>"$LOG_FILE"
+            fi
+        else
+            # Fallback for systems without FZF geometry vars
+            kitten icat --clear --transfer-mode=file --stdin=no "$IMG" > "$TTY_DEV" 2>>"$LOG_FILE"
+        fi
     fi
 else
-    # echo "No valid video ID found" >> "$LOG_FILE"
     :
 fi
-
-# Display Text Info nicely formatted
-echo ""
-echo ""
-echo -e "\033[1;33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-echo -e "\033[1;37m$TITLE\033[0m"
-echo ""
-echo -e "\033[0;36mChannel:\033[0m $CHANNEL"
-echo -e "\033[0;32mDuration:\033[0m $DURATION"
-echo -e "\033[1;33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
