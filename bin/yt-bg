@@ -115,7 +115,7 @@ if [[ "$QUERY" == "rec" || "$QUERY" == "feed" ]]; then
         --with-nth=1 \
         --no-mouse \
         --preview "$PREVIEW_SCRIPT {}" \
-        --preview-window=up:60%)
+        --preview-window=right:50%:wrap)
 
 else
     echo "Searching..."
@@ -131,7 +131,7 @@ else
         --with-nth=1 \
         --no-mouse \
         --preview "$PREVIEW_SCRIPT {}" \
-        --preview-window=up:60%)
+        --preview-window=right:50%:wrap)
 fi
 
 if [ -n "$SELECTED" ]; then

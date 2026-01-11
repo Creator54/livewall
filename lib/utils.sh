@@ -33,7 +33,7 @@ detect_zen_profile() {
 log() {
     local msg="$1"
     local logfile="$2"
-    echo "[LOG] $msg" >&2
+    # Only log to file, not to stderr (which would appear in fzf preview)
     if [ -n "$logfile" ]; then
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] $msg" >> "$logfile"
     fi
