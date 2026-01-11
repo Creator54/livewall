@@ -50,13 +50,16 @@ PERF_FLAGS="--cache=yes --demuxer-max-bytes=512M --demuxer-max-back-bytes=100M $
 # default: 1080p
 # We exclude AV1 ([vcodec!^=av01]) because we are forcing software decoding (--hwdec=no).
 # AV1 software decoding is very CPU intensive and causes stuttering/freezing.
-get_quality_opts() {
+# Quality Definitions
+# default: 1080p
+# We exclude AV1 ([vcodec!^=av01]) because we are forcing software decoding (--hwdec=no).
+get_fmt_string() {
     case "$1" in
-        "best") echo "--ytdl-format=bestvideo[vcodec!^=av01]+bestaudio/best --hwdec=no $PERF_FLAGS" ;;
-        "1080p") echo "--ytdl-format=bestvideo[height<=1080][vcodec!^=av01]+bestaudio/best[height<=1080] --hwdec=no $PERF_FLAGS" ;;
-        "720p") echo "--ytdl-format=bestvideo[height<=720][vcodec!^=av01]+bestaudio/best[height<=720] --hwdec=no $PERF_FLAGS" ;;
-        "480p") echo "--ytdl-format=bestvideo[height<=480][vcodec!^=av01]+bestaudio/best[height<=480] --hwdec=no $PERF_FLAGS" ;;
-        *) echo "--ytdl-format=bestvideo[height<=1080][vcodec!^=av01]+bestaudio/best[height<=1080] --hwdec=no $PERF_FLAGS" ;;
+        "best") echo "bestvideo[vcodec!^=av01]+bestaudio/best" ;;
+        "1080p") echo "bestvideo[height<=1080][vcodec!^=av01]+bestaudio/best[height<=1080]" ;;
+        "720p") echo "bestvideo[height<=720][vcodec!^=av01]+bestaudio/best[height<=720]" ;;
+        "480p") echo "bestvideo[height<=480][vcodec!^=av01]+bestaudio/best[height<=480]" ;;
+        *) echo "bestvideo[height<=1080][vcodec!^=av01]+bestaudio/best[height<=1080]" ;;
     esac
 }
 
@@ -65,7 +68,11 @@ CURRENT_QUALITY="1080p"
 if [ -f "$QUALITY_FILE" ]; then
     CURRENT_QUALITY=$(cat "$QUALITY_FILE")
 fi
-MPV_OPTS=$(get_quality_opts "$CURRENT_QUALITY")
+
+# Construct MPV Options
+# We explicitly set --hwdec=no here, alongside other perf flags
+FMT=$(get_fmt_string "$CURRENT_QUALITY")
+MPV_OPTS="--ytdl-format=$FMT --hwdec=no $PERF_FLAGS"
 
 # Prepare Script Options
 QUALITY_SCRIPT_OPT=""
@@ -119,7 +126,8 @@ case "$1" in
 
        # Start mpvpaper
        # CRITICAL: Do NOT use --script=mpris.so with mpvpaper, it crashes.
-       mpvpaper -o "--loop --input-ipc-server=$IPC_SOCKET --panscan=1.0 $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$URL" >> "$CONTROL_LOG" 2>&1 &
+       # Removed --panscan=1.0 to fit content by default. Use 'cycle-fit' to toggle.
+       mpvpaper -o "--loop --input-ipc-server=$IPC_SOCKET $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$URL" >> "$CONTROL_LOG" 2>&1 &
 
        # Check if it started
        sleep 2
@@ -218,7 +226,7 @@ case "$1" in
        START_OPT=""
        if [ "$POS" != "null" ]; then START_OPT="--start=$POS"; fi
 
-       mpvpaper -o "--loop --input-ipc-server=$IPC_SOCKET --panscan=1.0 $START_OPT $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$PLAY_URL" >> "$CONTROL_LOG" 2>&1 &
+       mpvpaper -o "--loop --input-ipc-server=$IPC_SOCKET $START_OPT $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$PLAY_URL" >> "$CONTROL_LOG" 2>&1 &
     fi
     ;;
 
@@ -227,6 +235,14 @@ case "$1" in
     ;;
   "toggle-mute")
     echo 'cycle mute' | socat - "$IPC_SOCKET"
+    ;;
+  "cycle-fit")
+    # Cycle between 0.0 (Fit with bars, no crop) and 1.0 (Fill/Crop, no bars)
+    echo 'cycle-values panscan 0.0 1.0' | socat - "$IPC_SOCKET"
+    ;;
+  "cycle-aspect")
+    # Cycle video aspect ratio override: Original -> 16:9 (Stretch to Wide) -> 4:3 (Stretch to Box)
+    echo 'cycle-values video-aspect-override "-1" "16:9" "4:3"' | socat - "$IPC_SOCKET"
     ;;
   "seek-forward")
     echo 'seek 10' | socat - "$IPC_SOCKET"
@@ -289,10 +305,10 @@ case "$1" in
         if [ "$URL" != "null" ] && [ -n "$URL" ]; then
             # We can't change ytdl-format on the fly easily without reloading the file.
             # mpv supports 'set ytdl-format ...' but it only takes effect on next load.
-            NEW_OPTS=$(get_quality_opts "$NEXT_QUALITY")
-            YTDL_FMT=$(echo "$NEW_OPTS" | sed 's/--ytdl-format=//')
+            YTDL_FMT=$(get_fmt_string "$NEXT_QUALITY")
 
             # Send command to update property and reload
+            # This sets ONLY the format string, which is correct (unlike before)
             echo "{ \"command\": [\"set_property\", \"ytdl-format\", \"$YTDL_FMT\"] }" | socat - "$IPC_SOCKET" >/dev/null
 
             # Seek to current position to force reload/re-buffer (or just reload file)
