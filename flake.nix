@@ -54,6 +54,7 @@
               pkgs.gawk
               pkgs.gnused
             ]} \
+            --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib" \
             --set PREVIEW_SCRIPT_PATH "$out/lib/preview.sh"
 
           # Wrap yt-bg-control with dependencies
@@ -71,6 +72,7 @@
               pkgs.xdg-utils
               pkgs.axel
             ]} \
+            --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib" \
             --set MPRIS_SCRIPT_PATH "${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so" \
             --set QUALITY_SCRIPT_PATH "$out/lib/quality-cycle.lua"
         '';
@@ -107,6 +109,7 @@
 
         shellHook = ''
           export PATH=$PWD/bin:$PWD/lib:$PATH
+          export LD_LIBRARY_PATH=/run/opengl-driver/lib:$LD_LIBRARY_PATH
           export MPRIS_SCRIPT_PATH="${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so"
           export QUALITY_SCRIPT_PATH="$PWD/lib/quality-cycle.lua"
           export PREVIEW_SCRIPT_PATH="$PWD/lib/preview.sh"
