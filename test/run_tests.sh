@@ -29,6 +29,23 @@ mkdir -p "$RUNTIME_DIR"
 
 echo "=== Starting Tests ==="
 
+# Test 0: Help flags
+echo "Test 0: Help flags"
+livewall --help > /dev/null
+if [ $? -eq 0 ]; then
+    echo "PASS: livewall --help works"
+else
+    echo "FAIL: livewall --help failed"
+    exit 1
+fi
+livewall-control --help > /dev/null
+if [ $? -eq 0 ]; then
+    echo "PASS: livewall-control --help works"
+else
+    echo "FAIL: livewall-control --help failed"
+    exit 1
+fi
+
 # Test 1: livewall search flow
 echo "Test 1: livewall search flow"
 # Cleanup before starting
@@ -171,6 +188,7 @@ fi
 # Test 9: download
 echo "Test 9: download"
 livewall-control download
+sleep 0.5
 # It should call notify-send and kitty
 if grep -q "Called kitty with:.*yt-dlp" "$LOG_FILE" || grep -q "Called kitty with:.*class floating-term" "$LOG_FILE"; then
     # Note: the mock for kitty just echoes args.
@@ -178,6 +196,7 @@ if grep -q "Called kitty with:.*yt-dlp" "$LOG_FILE" || grep -q "Called kitty wit
     echo "PASS: download triggered kitty/yt-dlp"
 else
     echo "FAIL: download failed to trigger download"
+    cat "$LOG_FILE"
     exit 1
 fi
 

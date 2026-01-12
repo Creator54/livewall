@@ -18,28 +18,26 @@ else
     exit 1
 fi
 
-# Local logging wrapper
+# Local logging wrapper with severity levels
 CONTROL_LOG="$RUNTIME_DIR/control.log"
 log_msg() {
     log "$1" "$CONTROL_LOG"
 }
 
-# Check if path is a local file
-is_local_file() {
-    local path="$1"
-    # Expand ~ to home directory
-    path="${path/#\~/$HOME}"
-    
-    # Check if it's a file path (starts with /, ./, or ~)
-    if [[ "$path" == /* ]] || [[ "$path" == ./* ]] || [[ "$path" == ~* ]]; then
-        # Convert to absolute path
-        if [ -f "$path" ]; then
-            realpath "$path" 2>/dev/null
-            return 0
-        fi
-    fi
-    return 1
+log_info() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $1" >> "$CONTROL_LOG"
 }
+
+log_error() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $1" >> "$CONTROL_LOG"
+}
+
+log_debug() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DEBUG] $1" >> "$CONTROL_LOG"
+}
+
+# Check if path is a local file (replaced by shared utils)
+# is_local_video_file() removed
 
 # Zen Browser (Firefox-based) profile detection for cookies
 ZEN_PROFILE=$(detect_zen_profile)
@@ -95,46 +93,73 @@ get_prop() {
   echo "{ \"command\": [\"get_property\", \"$1\"] }" | socat - "$IPC_SOCKET" 2>/dev/null | jq -r .data
 }
 
+
 case "$1" in
+  "--help"|"-h")
+    echo "livewall-control - Playback controller for livewall"
+    echo "Usage: livewall-control <command> [args]"
+    echo ""
+    echo "Commands:"
+    echo "  play <url|path>       Play video from URL or local path"
+    echo "  toggle-pip            Toggle between Wallpaper and PiP mode"
+    echo "  toggle-pause          Pause/Resume playback"
+    echo "  toggle-mute           Mute/Unmute audio"
+    echo "  cycle-quality         Cycle video quality (1080p -> 720p -> ...)"
+    echo "  seek-forward          Seek forward 10s"
+    echo "  seek-backward         Seek backward 10s"
+    echo "  download              Download current video (YouTube only)"
+    echo "  open                  Open video in browser or file manager"
+    echo "  cycle-fit             Cycle aspect ratio fit modes"
+    echo "  cycle-aspect          Cycle proper aspect ratio overrides"
+    echo "  --help, -h            Show this help message"
+    exit 0
+    ;;
+
   "play")
     URL="$2"
     if [ -z "$URL" ]; then exit 1; fi
 
-    log_msg "Playing URL: $URL"
+    log_info "=== PLAY COMMAND INITIATED ==="
+    log_info "URL: $URL"
 
     # Check if it's a local file
-    LOCAL_FILE=$(is_local_file "$URL")
+    LOCAL_FILE=$(is_local_video_file "$URL")
     IS_LOCAL=$?
     
     if [ $IS_LOCAL -eq 0 ]; then
-        log_msg "Detected local file: $LOCAL_FILE"
+        log_info "Detected local file: $LOCAL_FILE"
         URL="$LOCAL_FILE"
-        # For local files, use simplified options (no yt-dlp)
         MPV_OPTS="--hwdec=no $PERF_FLAGS"
+        log_debug "Using local file options: $MPV_OPTS"
     else
-        # For YouTube videos, use yt-dlp with quality settings
         FMT=$(get_fmt_string "$CURRENT_QUALITY")
         MPV_OPTS="--ytdl-format=$FMT --hwdec=no $PERF_FLAGS $COOKIE_OPTS"
+        log_info "Using YouTube with quality: $CURRENT_QUALITY"
+        log_debug "MPV options: $MPV_OPTS"
     fi
 
     # Check if either mpvpaper or mpv (pip) is running on the socket
     if [ -S "$IPC_SOCKET" ] && (pgrep -f "mpvpaper.*$IPC_SOCKET" || pgrep -f "mpv.*$IPC_SOCKET"); then
-       log_msg "Switching existing player"
+       log_info "Existing player found, switching video via IPC"
+       log_debug "IPC socket: $IPC_SOCKET"
        echo "loadfile \"$URL\"" | socat - "$IPC_SOCKET"
        notify-send "Live Wallpaper" "Loading..."
     else
        # Start mpvpaper (default mode)
-       log_msg "Starting new mpvpaper instance"
+       log_info "=== STARTING NEW MPVPAPER INSTANCE ==="
+       log_debug "Runtime dir: $RUNTIME_DIR"
+       log_debug "IPC socket: $IPC_SOCKET"
        notify-send "Live Wallpaper" "Loading..."
 
        # Kill old processes
+       log_debug "Cleaning up old processes..."
        pkill swaybg || true
        pkill mpvpaper || true
        pkill mpv || true
 
-       # Wait for players to die to free up socket/resources
+       # Wait for players (and swaybg) to die to free up socket/resources/layer
        count=0
-       while (pgrep -f "mpvpaper" > /dev/null || pgrep -f "mpv" > /dev/null) && [ $count -lt 20 ]; do
+       while (pgrep -f "mpvpaper" > /dev/null || pgrep -f "mpv" > /dev/null || pgrep -x "swaybg" > /dev/null) && [ $count -lt 20 ]; do
            sleep 0.1
            count=$((count+1))
        done
@@ -142,19 +167,23 @@ case "$1" in
        # Force kill if still running
        if pgrep -f "mpvpaper" > /dev/null; then pkill -9 mpvpaper; fi
        if pgrep -f "mpv" > /dev/null; then pkill -9 mpv; fi
+       if pgrep -x "swaybg" > /dev/null; then pkill -9 swaybg; fi
 
        # Remove stale socket
        rm -f "$IPC_SOCKET"
 
        # Start mpvpaper
-       # CRITICAL: Do NOT use --script=mpris.so with mpvpaper, it crashes.
-       # Removed --panscan=1.0 to fit content by default. Use 'cycle-fit' to toggle.
-       mpvpaper -o "--loop --input-ipc-server=$IPC_SOCKET $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$URL" >> "$CONTROL_LOG" 2>&1 &
+       log_info "Launching mpvpaper with verbose output"
+       log_debug "Command: mpvpaper -v -o '--loop --input-ipc-server=$IPC_SOCKET $MPV_OPTS $QUALITY_SCRIPT_OPT' '*' '$URL'"
+       mpvpaper -v -o "--loop --input-ipc-server=$IPC_SOCKET $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$URL" >> "$CONTROL_LOG" 2>&1 &
+       MPVPAPER_PID=$!
+       log_debug "mpvpaper PID: $MPVPAPER_PID"
 
        # Check if it started
        sleep 2
        if ! pgrep -f "mpvpaper" > /dev/null; then
-          log_msg "mpvpaper failed to start"
+          log_error "mpvpaper failed to start (no process found after 2s)"
+          log_error "Check previous lines for mpvpaper error output"
           notify-send "Error" "Failed to start video"
        fi
     fi
@@ -175,7 +204,7 @@ case "$1" in
     log_msg "Stream URL candidate: $STREAM_URL"
 
     # Check if it's a local file
-    LOCAL_FILE=$(is_local_file "$URL")
+    LOCAL_FILE=$(is_local_video_file "$URL")
     IS_LOCAL=$?
     
     # Use stream URL if available (faster), otherwise fallback to original URL
@@ -261,7 +290,7 @@ case "$1" in
        START_OPT=""
        if [ "$POS" != "null" ]; then START_OPT="--start=$POS"; fi
 
-       mpvpaper -o "--loop --input-ipc-server=$IPC_SOCKET $START_OPT $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$PLAY_URL" >> "$CONTROL_LOG" 2>&1 &
+       mpvpaper -v -o "--loop --input-ipc-server=$IPC_SOCKET $START_OPT $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$PLAY_URL" >> "$CONTROL_LOG" 2>&1 &
     fi
     ;;
 
@@ -291,7 +320,7 @@ case "$1" in
     TERMINAL="${TERMINAL:-kitty}"
 
     # Check if it's a local file
-    LOCAL_FILE=$(is_local_file "$URL")
+    LOCAL_FILE=$(is_local_video_file "$URL")
     if [ $? -eq 0 ]; then
         notify-send "Live Wallpaper" "This is already a local file: $LOCAL_FILE"
         exit 0
@@ -319,7 +348,7 @@ case "$1" in
     URL=$(get_prop "path")
     
     # Check if it's a local file
-    LOCAL_FILE=$(is_local_file "$URL")
+    LOCAL_FILE=$(is_local_video_file "$URL")
     if [ $? -eq 0 ]; then
         notify-send "Live Wallpaper" "Opening file location..."
         xdg-open "$(dirname "$LOCAL_FILE")"
@@ -336,7 +365,7 @@ case "$1" in
   "cycle-quality")
     # Check if current video is a local file
     URL=$(get_prop "path")
-    LOCAL_FILE=$(is_local_file "$URL")
+    LOCAL_FILE=$(is_local_video_file "$URL")
     if [ $? -eq 0 ]; then
         notify-send "Live Wallpaper" "Quality cycling not available for local files"
         exit 0

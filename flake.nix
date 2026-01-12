@@ -47,7 +47,10 @@
             pkgs.mesa
             pkgs.libGL
             pkgs.libglvnd
-          ];
+            pkgs.wayland
+            pkgs.libxkbcommon
+            pkgs.vulkan-loader
+          ] + ":/run/opengl-driver/lib";
         in ''
           # Wrap livewall with dependencies
           wrapProgram $out/bin/livewall \

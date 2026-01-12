@@ -18,6 +18,21 @@ else
     exit 1
 fi
 
+# Help
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    echo "livewall - Live Wallpaper for YouTube & Local Videos"
+    echo "Usage: livewall [command|query|file]"
+    echo ""
+    echo "Commands:"
+    echo "  <query>               Search YouTube for videos"
+    echo "  /path/to/file.mp4     Play local video file directly"
+    echo "  local [dir]           Browse local videos (default: ~/Videos)"
+    echo "  history               Browse and replay playback history"
+    echo "  rec | feed            Browse YouTube recommendations"
+    echo "  --help, -h            Show this help message"
+    exit 0
+fi
+
 # Resolve Preview Script
 PREVIEW_SCRIPT="${PREVIEW_SCRIPT_PATH:-$LIB_DIR/preview.sh}"
 
@@ -28,25 +43,6 @@ mkdir -p "$(dirname "$HISTORY_FILE")"
 SEARCH_LOG="$RUNTIME_DIR/search.log"
 log_msg() {
     log "$1" "$SEARCH_LOG"
-}
-
-# Supported video extensions for local files
-VIDEO_EXTS="mp4|mkv|webm|avi|mov|flv|m4v|wmv|mpg|mpeg"
-
-# Check if input is a local file path
-is_local_file() {
-    local path="$1"
-    # Expand ~ to home directory
-    path="${path/#\~/$HOME}"
-    
-    if [ -f "$path" ]; then
-        # Check if it has a video extension
-        if echo "$path" | grep -qiE "\\.($VIDEO_EXTS)$"; then
-            echo "$path"
-            return 0
-        fi
-    fi
-    return 1
 }
 
 # Local File Browser
@@ -136,7 +132,7 @@ fi
 
 # Check if argument is a local file path
 if [ -n "$1" ]; then
-    FILE_PATH=$(is_local_file "$*")
+    FILE_PATH=$(is_local_video_file "$*")
     if [ $? -eq 0 ]; then
         log_msg "Playing local file: $FILE_PATH"
         
