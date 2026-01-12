@@ -7,9 +7,9 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 BIN_DIR="$ROOT_DIR/bin"
 LIB_DIR="$ROOT_DIR/lib"
 MOCKS_DIR="$SCRIPT_DIR/mocks"
-LOG_FILE="/tmp/yt-bg-test.log"
+LOG_FILE="/tmp/livewall-test.log"
 
-export XDG_RUNTIME_DIR="/tmp/yt-bg-test-runtime"
+export XDG_RUNTIME_DIR="/tmp/livewall-test-runtime"
 # Source utils to get standardized paths
 if [ -f "$LIB_DIR/utils.sh" ]; then
     source "$LIB_DIR/utils.sh"
@@ -29,17 +29,17 @@ mkdir -p "$RUNTIME_DIR"
 
 echo "=== Starting Tests ==="
 
-# Test 1: yt-bg search flow
-echo "Test 1: yt-bg search flow"
+# Test 1: livewall search flow
+echo "Test 1: livewall search flow"
 # Cleanup before starting
 rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running "$IPC_SOCKET"
 
 # We pipe "Rick Astley" into the script.
-# But yt-bg reads from user input `read QUERY`.
+# But livewall reads from user input `read QUERY`.
 # We can pipe it in.
-echo "Rick Astley" | yt-bg
+echo "Rick Astley" | livewall
 
-# Wait for background processes (yt-bg-control launches mpvpaper in bg)
+# Wait for background processes (livewall-control launches mpvpaper in bg)
 sleep 1
 
 # Check if yt-dlp was called
@@ -59,20 +59,20 @@ else
     exit 1
 fi
 
-# Check if yt-bg-control play was called with the correct URL
+# Check if livewall-control play was called with the correct URL
 # We verify this by checking if the mock mpvpaper was called with the expected URL
 if grep -q "Called mpvpaper with:.*https://www.youtube.com/watch?v=dQw4w9WgXcQ" "$LOG_FILE"; then
-    echo "PASS: yt-bg-control play called with correct URL"
+    echo "PASS: livewall-control play called with correct URL"
 else
-    echo "FAIL: yt-bg-control play not called correctly"
+    echo "FAIL: livewall-control play not called correctly"
     grep "Called mpvpaper" "$LOG_FILE" || true
     exit 1
 fi
 
-# Test 2: yt-bg-control play
-echo "Test 2: yt-bg-control play (direct)"
+# Test 2: livewall-control play
+echo "Test 2: livewall-control play (direct)"
 rm -f /tmp/mock_mpvpaper_running
-yt-bg-control play "https://example.com/video"
+livewall-control play "https://example.com/video"
 
 if grep -q "Called mpvpaper with:.*https://example.com/video" "$LOG_FILE"; then
     echo "PASS: mpvpaper started"
@@ -81,8 +81,8 @@ else
     exit 1
 fi
 
-# Test 3: yt-bg-control toggle-pip (to PiP)
-echo "Test 3: yt-bg-control toggle-pip (to PiP)"
+# Test 3: livewall-control toggle-pip (to PiP)
+echo "Test 3: livewall-control toggle-pip (to PiP)"
 # Ensure mpvpaper is "running" (simulated by our mock creating the file)
 touch /tmp/mock_mpvpaper_running
 rm -f /tmp/mock_mpv_running
@@ -94,7 +94,7 @@ python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCK
 # We need to mock the socket response for get_prop in socat mock
 # The socat mock handles this based on input.
 
-yt-bg-control toggle-pip
+livewall-control toggle-pip
 
 # Wait for background processes to finish writing to log
 sleep 1
@@ -106,8 +106,8 @@ else
     exit 1
 fi
 
-# Test 4: yt-bg-control toggle-pip (back to Wallpaper)
-echo "Test 4: yt-bg-control toggle-pip (back to Wallpaper)"
+# Test 4: livewall-control toggle-pip (back to Wallpaper)
+echo "Test 4: livewall-control toggle-pip (back to Wallpaper)"
 # Setup state: mpv running, mpvpaper not
 rm -f /tmp/mock_mpvpaper_running
 touch /tmp/mock_mpv_running
@@ -116,7 +116,7 @@ touch /tmp/mock_mpv_running
 rm -f "$IPC_SOCKET"
 python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
-yt-bg-control toggle-pip
+livewall-control toggle-pip
 
 # Wait for background processes
 sleep 1
@@ -130,7 +130,7 @@ fi
 
 # Test 5: toggle-pause
 echo "Test 5: toggle-pause"
-yt-bg-control toggle-pause
+livewall-control toggle-pause
 if grep -q "socat stdin: cycle pause" "$LOG_FILE"; then
     echo "PASS: toggle-pause called correctly"
 else
@@ -140,7 +140,7 @@ fi
 
 # Test 6: toggle-mute
 echo "Test 6: toggle-mute"
-yt-bg-control toggle-mute
+livewall-control toggle-mute
 if grep -q "socat stdin: cycle mute" "$LOG_FILE"; then
     echo "PASS: toggle-mute called correctly"
 else
@@ -150,7 +150,7 @@ fi
 
 # Test 7: seek-forward
 echo "Test 7: seek-forward"
-yt-bg-control seek-forward
+livewall-control seek-forward
 if grep -q "socat stdin: seek 10" "$LOG_FILE"; then
     echo "PASS: seek-forward called correctly"
 else
@@ -160,7 +160,7 @@ fi
 
 # Test 8: seek-backward
 echo "Test 8: seek-backward"
-yt-bg-control seek-backward
+livewall-control seek-backward
 if grep -q "socat stdin: seek -10" "$LOG_FILE"; then
     echo "PASS: seek-backward called correctly"
 else
@@ -170,7 +170,7 @@ fi
 
 # Test 9: download
 echo "Test 9: download"
-yt-bg-control download
+livewall-control download
 # It should call notify-send and kitty
 if grep -q "Called kitty with:.*yt-dlp" "$LOG_FILE" || grep -q "Called kitty with:.*class floating-term" "$LOG_FILE"; then
     # Note: the mock for kitty just echoes args.
@@ -183,7 +183,7 @@ fi
 
 # Test 10: open
 echo "Test 10: open"
-yt-bg-control open
+livewall-control open
 if grep -q "Called xdg-open with: https://www.youtube.com/watch?v=dQw4w9WgXcQ" "$LOG_FILE"; then
     echo "PASS: open triggered xdg-open"
 else
@@ -214,7 +214,7 @@ rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running
 # Title: "Bad Title\tWith Tab"
 export MOCK_FZF_OUTPUT="Bad Title\tWith Tab\tChannelName\t10:00\thttps://youtube.com/watch?v=TABBED\tTABBED_ID"
 
-echo "Tab Search" | yt-bg
+echo "Tab Search" | livewall
 unset MOCK_FZF_OUTPUT
 
 sleep 1
@@ -229,7 +229,7 @@ fi
 # Test 13: Download with custom terminal
 echo "Test 13: Download with custom terminal"
 export TERMINAL="mock_term"
-yt-bg-control download
+livewall-control download
 unset TERMINAL
 
 # Wait for background process
@@ -259,7 +259,7 @@ python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCK
 # Use a temp file to avoid race conditions with background writers (though minimal here)
 grep -v "Called swaybg" "$LOG_FILE" > "$LOG_FILE.tmp" && mv "$LOG_FILE.tmp" "$LOG_FILE"
 
-yt-bg-control toggle-pip
+livewall-control toggle-pip
 sleep 1
 
 if grep -q "Called swaybg" "$LOG_FILE"; then
@@ -282,7 +282,7 @@ rm -f /tmp/mock_mpv_running
 rm -f "$IPC_SOCKET"
 python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
-yt-bg-control toggle-pip
+livewall-control toggle-pip
 # The script waits 1s before calling swaybg, so we wait longer
 sleep 2
 
@@ -305,7 +305,7 @@ rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running
 CLI_QUERY="CLI_Arg_Search"
 
 # Run with arg - should NOT need stdin
-yt-bg "$CLI_QUERY"
+livewall "$CLI_QUERY"
 
 sleep 1
 
@@ -325,7 +325,7 @@ rm -f "$IPC_SOCKET"
 python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
 # 1. First cycle: default (1080p implied) -> 720p
-yt-bg-control cycle-quality
+livewall-control cycle-quality
 
 if [ "$(cat "$QUALITY_FILE")" == "720p" ]; then
     echo "PASS: cycled to 720p"
@@ -339,7 +339,7 @@ fi
 # Our mock socat logs commands.
 # It should try to set ytdl-format and reload.
 # Note: Since our mock socat returns empty/default for get_prop unless scripted,
-# yt-bg-control might fail the [ -n "$URL" ] check inside cycle-quality if we don't mock the response.
+# livewall-control might fail the [ -n "$URL" ] check inside cycle-quality if we don't mock the response.
 # However, the script uses `get_prop "path"` which calls `socat ... | jq`.
 # The mock `socat` script in `test/mocks/socat` needs to handle this or we rely on previous behavior.
 
@@ -352,7 +352,7 @@ fi
 # Mock get_prop response?
 # The current mock `socat` (test/mocks/socat) might not return valid JSON for `jq` to parse if not handled.
 # Let's check `test/mocks/socat`.
-# It seems I didn't read `test/mocks/socat` in this session, but based on `bin/yt-bg-control` using `get_prop`,
+# It seems I didn't read `test/mocks/socat` in this session, but based on `bin/livewall-control` using `get_prop`,
 # and previous tests passing `get_prop` calls.
 
 # For this test, let's just assume the file update is enough to verify the logic "Switching quality",
@@ -367,9 +367,9 @@ fi
 
 # 3. Test cycle wrap-around
 # 720p -> 480p -> best -> 1080p
-yt-bg-control cycle-quality # -> 480p
-yt-bg-control cycle-quality # -> best
-yt-bg-control cycle-quality # -> 1080p
+livewall-control cycle-quality # -> 480p
+livewall-control cycle-quality # -> best
+livewall-control cycle-quality # -> 1080p
 
 if [ "$(cat "$QUALITY_FILE")" == "1080p" ]; then
     echo "PASS: cycled back to 1080p"
@@ -384,7 +384,7 @@ echo "Test 17: Lua Script Loading"
 # Note: The actual path depends on the environment (nix store vs local).
 # In this test environment, QUALITY_SCRIPT_PATH might not be set by the test runner unless we source something,
 # but let's assume we are running via `make test` which calls `bash test/run_tests.sh`.
-# The `bin/yt-bg-control` script checks `if [ -f "$QUALITY_SCRIPT_PATH" ]`.
+# The `bin/livewall-control` script checks `if [ -f "$QUALITY_SCRIPT_PATH" ]`.
 # So we need to export it for the test.
 
 export QUALITY_SCRIPT_PATH="$LIB_DIR/quality-cycle.lua"
@@ -393,7 +393,7 @@ export QUALITY_SCRIPT_PATH="$LIB_DIR/quality-cycle.lua"
 rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running "$IPC_SOCKET"
 
 # Trigger play
-yt-bg-control play "https://example.com/lua-test"
+livewall-control play "https://example.com/lua-test"
 sleep 0.5
 
 if grep -q "Called mpvpaper with:.*--script=.*quality-cycle.lua" "$LOG_FILE"; then
@@ -412,7 +412,7 @@ rm -f /tmp/mock_mpv_running
 rm -f "$IPC_SOCKET"
 python3 -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('$IPC_SOCKET')"
 
-yt-bg-control toggle-pip
+livewall-control toggle-pip
 sleep 0.5
 
 if grep -q "Called mpv with:.*--script=.*quality-cycle.lua" "$LOG_FILE"; then
@@ -431,16 +431,16 @@ echo "Test 18: History Logging"
 rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running "$IPC_SOCKET"
 
 # Define a test history file
-export HOME="/tmp/yt-bg-test-home"
-mkdir -p "$HOME/.local/share/yt-bg"
-HISTORY_FILE="$HOME/.local/share/yt-bg/history"
+export HOME="/tmp/livewall-test-home"
+mkdir -p "$HOME/.local/share/livewall"
+HISTORY_FILE="$HOME/.local/share/livewall/history"
 rm -f "$HISTORY_FILE"
 
 # Run a search that selects a video (we mock fzf output via pipe)
 # We need to simulate the user selection
 # Title<TAB>Channel<TAB>Duration<TAB>URL<TAB>ID
-# Note: yt-bg expects fzf to output the selection.
-# But `yt-bg` calls `cat results | fzf`.
+# Note: livewall expects fzf to output the selection.
+# But `livewall` calls `cat results | fzf`.
 # To mock this without interactive fzf, we need to mock fzf itself?
 # The current test suite mocks fzf in `test/mocks/fzf`.
 # Let's check `test/mocks/fzf`.
@@ -451,8 +451,8 @@ rm -f "$HISTORY_FILE"
 # So we can set MOCK_FZF_OUTPUT to simulate selection.
 export MOCK_FZF_OUTPUT="History Video	History Channel	5:00	https://youtube.com/watch?v=HIST	HIST_ID"
 
-# Run yt-bg
-echo "History Search" | yt-bg
+# Run livewall
+echo "History Search" | livewall
 
 if [ -f "$HISTORY_FILE" ]; then
     if grep -q "History Video" "$HISTORY_FILE"; then
@@ -470,7 +470,7 @@ unset MOCK_FZF_OUTPUT
 
 # Test 19: History Replay
 echo "Test 19: History Replay"
-# Now we run `yt-bg history`. It calls `tac history | fzf`.
+# Now we run `livewall history`. It calls `tac history | fzf`.
 # We need fzf to select one line.
 # We'll use MOCK_FZF_OUTPUT to simulate the user picking a line from history.
 # The input to fzf will be the history file content (reversed).
@@ -484,10 +484,10 @@ SAVED_LINE=$(cat "$HISTORY_FILE")
 export MOCK_FZF_OUTPUT="$SAVED_LINE"
 
 # Run history command
-yt-bg history
+livewall history
 
 # Verify play was called
-# Note: yt-bg history extracts the URL from the selected line.
+# Note: livewall history extracts the URL from the selected line.
 # URL is 2nd to last field.
 # Saved Line: Date \t Title \t Channel \t Duration \t URL \t ID
 # URL is correct.
@@ -502,6 +502,6 @@ else
 fi
 
 unset MOCK_FZF_OUTPUT
-rm -rf "$HOME/.local/share/yt-bg"
+rm -rf "$HOME/.local/share/livewall"
 
 echo "=== All Tests Passed ==="

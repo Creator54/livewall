@@ -1,28 +1,28 @@
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
-LIBDIR ?= $(PREFIX)/lib/yt-bg
+LIBDIR ?= $(PREFIX)/lib/livewall
 
 test:
 	bash test/run_tests.sh
 
 install:
-	@echo "Installing yt-bg to $(PREFIX)..."
+	@echo "Installing livewall to $(PREFIX)..."
 	mkdir -p $(BINDIR)
 	mkdir -p $(LIBDIR)
-	cp bin/yt-bg $(BINDIR)/yt-bg
-	cp bin/yt-bg-control $(BINDIR)/yt-bg-control
+	cp bin/livewall $(BINDIR)/livewall
+	cp bin/livewall-control $(BINDIR)/livewall-control
 	cp lib/preview.sh $(LIBDIR)/preview.sh
 	cp lib/quality-cycle.lua $(LIBDIR)/quality-cycle.lua
 	cp lib/utils.sh $(LIBDIR)/utils.sh
-	chmod +x $(BINDIR)/yt-bg $(BINDIR)/yt-bg-control $(LIBDIR)/preview.sh
+	chmod +x $(BINDIR)/livewall $(BINDIR)/livewall-control $(LIBDIR)/preview.sh
 	@echo "Installation complete."
 	@echo "NOTE: Ensure you have the required dependencies: mpvpaper, mpv, yt-dlp, socat, jq, fzf, swaybg"
 	@echo "NOTE: You may need to set PREVIEW_SCRIPT_PATH=$(LIBDIR)/preview.sh and QUALITY_SCRIPT_PATH=$(LIBDIR)/quality-cycle.lua"
 
 uninstall:
-	@echo "Uninstalling yt-bg..."
-	rm -f $(BINDIR)/yt-bg
-	rm -f $(BINDIR)/yt-bg-control
+	@echo "Uninstalling livewall..."
+	rm -f $(BINDIR)/livewall
+	rm -f $(BINDIR)/livewall-control
 	rm -rf $(LIBDIR)
 	@echo "Uninstallation complete."
 
@@ -41,8 +41,8 @@ check:
 	@echo "All required dependencies found."
 
 clean:
-	rm -rf /tmp/yt-wall-thumbs /tmp/yt-bg-search.log /tmp/yt-bg-control.log /tmp/yt-bg-preview.log /tmp/yt-bg-test.log /tmp/yt-results.txt /tmp/live-wallpaper-socket /tmp/yt-bg-quality /tmp/zen-profile /tmp/yt-bg-mpv.conf result
+	rm -rf /tmp/livewall-thumbs /tmp/livewall-search.log /tmp/livewall-control.log /tmp/livewall-preview.log /tmp/livewall-test.log /tmp/livewall-results.txt /tmp/livewall-socket /tmp/livewall-quality /tmp/zen-profile /tmp/livewall-mpv.conf result
 	rm -f /tmp/mock_mpvpaper_running /tmp/mock_mpv_running
-	rm -rf /tmp/yt-bg-test-home
+	rm -rf /tmp/livewall-test-home
 
 .PHONY: test install uninstall clean

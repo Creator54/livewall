@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# yt-bg: Common utilities and configuration
+# livewall: Common utilities and configuration
 
 # Standardize Runtime Directory (XDG compliant with fallback to /tmp)
 # We use a dedicated subdirectory to keep things clean
-export RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/yt-bg"
+export RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/livewall"
 mkdir -p "$RUNTIME_DIR"
 
 # Standardize File Paths

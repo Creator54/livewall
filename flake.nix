@@ -1,5 +1,5 @@
 {
-  description = "yt-bg: YouTube Live Wallpaper & Floating Player";
+  description = "livewall: Live Wallpaper for YouTube & Local Videos";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
@@ -11,8 +11,8 @@
       pkgs = nixpkgs.legacyPackages.${system};
 
       # Define the package
-      yt-bg-pkg = pkgs.stdenv.mkDerivation {
-        pname = "yt-bg";
+      livewall-pkg = pkgs.stdenv.mkDerivation {
+        pname = "livewall";
         version = "0.1.0";
 
         src = ./.;
@@ -32,8 +32,8 @@
           mkdir -p $out/bin $out/lib
 
           # Copy scripts
-          cp bin/yt-bg $out/bin/
-          cp bin/yt-bg-control $out/bin/
+          cp bin/livewall $out/bin/
+          cp bin/livewall-control $out/bin/
           cp lib/preview.sh $out/lib/
           cp lib/quality-cycle.lua $out/lib/
           cp lib/utils.sh $out/lib/
@@ -49,8 +49,8 @@
             pkgs.libglvnd
           ];
         in ''
-          # Wrap yt-bg with dependencies
-          wrapProgram $out/bin/yt-bg \
+          # Wrap livewall with dependencies
+          wrapProgram $out/bin/livewall \
             --prefix PATH : ${pkgs.lib.makeBinPath [
               pkgs.mpvpaper
               pkgs.mpv
@@ -71,8 +71,8 @@
             --prefix LD_LIBRARY_PATH : "${libPath}" \
             --set PREVIEW_SCRIPT_PATH "$out/lib/preview.sh"
 
-          # Wrap yt-bg-control with dependencies
-          wrapProgram $out/bin/yt-bg-control \
+          # Wrap livewall-control with dependencies
+          wrapProgram $out/bin/livewall-control \
             --prefix PATH : ${pkgs.lib.makeBinPath [
               pkgs.mpvpaper
               pkgs.mpv
@@ -93,7 +93,7 @@
       };
     in
     {
-      packages.${system}.default = yt-bg-pkg;
+      packages.${system}.default = livewall-pkg;
 
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = with pkgs; [
@@ -138,8 +138,8 @@
           export MPRIS_SCRIPT_PATH="${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so"
           export QUALITY_SCRIPT_PATH="$PWD/lib/quality-cycle.lua"
           export PREVIEW_SCRIPT_PATH="$PWD/lib/preview.sh"
-          echo "🎥 yt-bg environment loaded!"
-          echo "Run 'yt-bg' to start searching."
+          echo "🎥 livewall environment loaded!"
+          echo "Run 'livewall' to start searching."
         '';
       };
     };

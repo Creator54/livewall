@@ -7,8 +7,8 @@ if [ -f "$(dirname "$0")/utils.sh" ]; then
   LIB_DIR="$(dirname "$0")"
 elif [ -f "$(dirname "$0")/../lib/utils.sh" ]; then
   LIB_DIR="$(dirname "$0")/../lib"
-elif [ -f "$(dirname "$0")/../lib/yt-bg/utils.sh" ]; then
-  LIB_DIR="$(dirname "$0")/../lib/yt-bg"
+elif [ -f "$(dirname "$0")/../lib/livewall/utils.sh" ]; then
+  LIB_DIR="$(dirname "$0")/../lib/livewall"
 fi
 
 if [ -n "$LIB_DIR" ] && [ -f "$LIB_DIR/utils.sh" ]; then
@@ -16,8 +16,8 @@ if [ -n "$LIB_DIR" ] && [ -f "$LIB_DIR/utils.sh" ]; then
   source "$LIB_DIR/utils.sh"
 else
   # Fallback if utils.sh not found (e.g. running in isolation without proper install)
-  CACHE_DIR="/tmp/yt-wall-thumbs"
-  PREVIEW_LOG="/tmp/yt-bg-preview.log"
+  CACHE_DIR="/tmp/livewall-thumbs"
+  PREVIEW_LOG="/tmp/livewall-preview.log"
   mkdir -p "$CACHE_DIR"
 fi
 

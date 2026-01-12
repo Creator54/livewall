@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# yt-bg-control: Control YouTube wallpaper playback
-# Commands: play <url>, toggle-pip, toggle-pause, toggle-mute, cycle-quality, seek-forward, seek-backward, download, open
+# livewall-control: Control live wallpaper playback (YouTube or local videos)
+# Commands: play <url|path>, toggle-pip, toggle-pause, toggle-mute, cycle-quality, seek-forward, seek-backward, download, open
 
 # Resolve Lib Dir & Source Utils
 LIB_DIR=""
 if [ -f "$(dirname "$0")/../lib/utils.sh" ]; then
     LIB_DIR="$(dirname "$0")/../lib"
-elif [ -f "$(dirname "$0")/../lib/yt-bg/utils.sh" ]; then
-    LIB_DIR="$(dirname "$0")/../lib/yt-bg"
+elif [ -f "$(dirname "$0")/../lib/livewall/utils.sh" ]; then
+    LIB_DIR="$(dirname "$0")/../lib/livewall"
 fi
 
 if [ -n "$LIB_DIR" ] && [ -f "$LIB_DIR/utils.sh" ]; then
@@ -22,6 +22,23 @@ fi
 CONTROL_LOG="$RUNTIME_DIR/control.log"
 log_msg() {
     log "$1" "$CONTROL_LOG"
+}
+
+# Check if path is a local file
+is_local_file() {
+    local path="$1"
+    # Expand ~ to home directory
+    path="${path/#\~/$HOME}"
+    
+    # Check if it's a file path (starts with /, ./, or ~)
+    if [[ "$path" == /* ]] || [[ "$path" == ./* ]] || [[ "$path" == ~* ]]; then
+        # Convert to absolute path
+        if [ -f "$path" ]; then
+            realpath "$path" 2>/dev/null
+            return 0
+        fi
+    fi
+    return 1
 }
 
 # Zen Browser (Firefox-based) profile detection for cookies
@@ -42,15 +59,12 @@ fi
 # Performance Flags:
 # --cache=yes --demuxer-max-bytes=512M: Aggressive buffering for high-speed connections
 # --demuxer-max-back-bytes=100M: Allow seeking back without re-downloading
-PERF_FLAGS="--cache=yes --demuxer-max-bytes=512M --demuxer-max-back-bytes=100M $COOKIE_OPTS"
+PERF_FLAGS="--cache=yes --demuxer-max-bytes=512M --demuxer-max-back-bytes=100M"
 
 # Quality Definitions
 # default: 1080p
 # We exclude AV1 ([vcodec!^=av01]) because we are forcing software decoding (--hwdec=no).
 # AV1 software decoding is very CPU intensive and causes stuttering/freezing.
-# Quality Definitions
-# default: 1080p
-# We exclude AV1 ([vcodec!^=av01]) because we are forcing software decoding (--hwdec=no).
 get_fmt_string() {
     case "$1" in
         "best") echo "bestvideo[vcodec!^=av01]+bestaudio/best" ;;
@@ -66,11 +80,6 @@ CURRENT_QUALITY="1080p"
 if [ -f "$QUALITY_FILE" ]; then
     CURRENT_QUALITY=$(cat "$QUALITY_FILE")
 fi
-
-# Construct MPV Options
-# We explicitly set --hwdec=no here, alongside other perf flags
-FMT=$(get_fmt_string "$CURRENT_QUALITY")
-MPV_OPTS="--ytdl-format=$FMT --hwdec=no $PERF_FLAGS"
 
 # Prepare Script Options
 QUALITY_SCRIPT_OPT=""
@@ -93,15 +102,30 @@ case "$1" in
 
     log_msg "Playing URL: $URL"
 
+    # Check if it's a local file
+    LOCAL_FILE=$(is_local_file "$URL")
+    IS_LOCAL=$?
+    
+    if [ $IS_LOCAL -eq 0 ]; then
+        log_msg "Detected local file: $LOCAL_FILE"
+        URL="$LOCAL_FILE"
+        # For local files, use simplified options (no yt-dlp)
+        MPV_OPTS="--hwdec=no $PERF_FLAGS"
+    else
+        # For YouTube videos, use yt-dlp with quality settings
+        FMT=$(get_fmt_string "$CURRENT_QUALITY")
+        MPV_OPTS="--ytdl-format=$FMT --hwdec=no $PERF_FLAGS $COOKIE_OPTS"
+    fi
+
     # Check if either mpvpaper or mpv (pip) is running on the socket
     if [ -S "$IPC_SOCKET" ] && (pgrep -f "mpvpaper.*$IPC_SOCKET" || pgrep -f "mpv.*$IPC_SOCKET"); then
        log_msg "Switching existing player"
        echo "loadfile \"$URL\"" | socat - "$IPC_SOCKET"
-       notify-send "YouTube Video" "Loading..."
+       notify-send "Live Wallpaper" "Loading..."
     else
        # Start mpvpaper (default mode)
        log_msg "Starting new mpvpaper instance"
-       notify-send "YouTube Video" "Loading..."
+       notify-send "Live Wallpaper" "Loading..."
 
        # Kill old processes
        pkill swaybg || true
@@ -110,7 +134,7 @@ case "$1" in
 
        # Wait for players to die to free up socket/resources
        count=0
-       while (pgrep -f "mpvpaper" >/dev/null || pgrep -f "mpv" >/dev/null) && [ $count -lt 20 ]; do
+       while (pgrep -f "mpvpaper" > /dev/null || pgrep -f "mpv" > /dev/null) && [ $count -lt 20 ]; do
            sleep 0.1
            count=$((count+1))
        done
@@ -150,12 +174,25 @@ case "$1" in
     log_msg "Toggling PiP. URL: $URL, Pos: $POS"
     log_msg "Stream URL candidate: $STREAM_URL"
 
+    # Check if it's a local file
+    LOCAL_FILE=$(is_local_file "$URL")
+    IS_LOCAL=$?
+    
     # Use stream URL if available (faster), otherwise fallback to original URL
     PLAY_URL="$URL"
-    if [ "$STREAM_URL" != "null" ] && [ -n "$STREAM_URL" ]; then
+    if [ $IS_LOCAL -eq 0 ]; then
+        # Local file - use original path
+        PLAY_URL="$LOCAL_FILE"
+        MPV_OPTS="--hwdec=no $PERF_FLAGS"
+        log_msg "Local file detected for PiP toggle"
+    elif [ "$STREAM_URL" != "null" ] && [ -n "$STREAM_URL" ]; then
         PLAY_URL="$STREAM_URL"
+        FMT=$(get_fmt_string "$CURRENT_QUALITY")
+        MPV_OPTS="--ytdl-format=$FMT --hwdec=no $PERF_FLAGS $COOKIE_OPTS"
         log_msg "Using direct stream URL (Fast switch)"
     else
+        FMT=$(get_fmt_string "$CURRENT_QUALITY")
+        MPV_OPTS="--ytdl-format=$FMT --hwdec=no $PERF_FLAGS $COOKIE_OPTS"
         log_msg "Stream URL missing. Falling back to resolving URL (Slow switch)"
     fi
 
@@ -253,8 +290,15 @@ case "$1" in
     TITLE=$(get_prop "media-title")
     TERMINAL="${TERMINAL:-kitty}"
 
+    # Check if it's a local file
+    LOCAL_FILE=$(is_local_file "$URL")
+    if [ $? -eq 0 ]; then
+        notify-send "Live Wallpaper" "This is already a local file: $LOCAL_FILE"
+        exit 0
+    fi
+
     if [ -n "$URL" ] && [ "$URL" != "null" ]; then
-       notify-send "Wallpaper" "Downloading: $TITLE"
+       notify-send "Live Wallpaper" "Downloading: $TITLE"
 
        if command -v "$TERMINAL" > /dev/null; then
             # Check for axel
@@ -273,14 +317,31 @@ case "$1" in
     ;;
   "open")
     URL=$(get_prop "path")
+    
+    # Check if it's a local file
+    LOCAL_FILE=$(is_local_file "$URL")
+    if [ $? -eq 0 ]; then
+        notify-send "Live Wallpaper" "Opening file location..."
+        xdg-open "$(dirname "$LOCAL_FILE")"
+        exit 0
+    fi
+    
     if [ -n "$URL" ] && [ "$URL" != "null" ]; then
-       notify-send "Wallpaper" "Opening in browser..."
+       notify-send "Live Wallpaper" "Opening in browser..."
        xdg-open "$URL"
     else
        notify-send "Error" "No video playing"
     fi
     ;;
   "cycle-quality")
+    # Check if current video is a local file
+    URL=$(get_prop "path")
+    LOCAL_FILE=$(is_local_file "$URL")
+    if [ $? -eq 0 ]; then
+        notify-send "Live Wallpaper" "Quality cycling not available for local files"
+        exit 0
+    fi
+    
     # Cycle order: 1080p -> 720p -> 480p -> best -> 1080p
     NEXT_QUALITY="1080p"
     case "$CURRENT_QUALITY" in
@@ -292,12 +353,11 @@ case "$1" in
 
     # Save preference
     echo "$NEXT_QUALITY" > "$QUALITY_FILE"
-    notify-send "Wallpaper" "Switching quality to $NEXT_QUALITY..."
+    notify-send "Live Wallpaper" "Switching quality to $NEXT_QUALITY..."
     log_msg "Switching quality from $CURRENT_QUALITY to $NEXT_QUALITY"
 
     # Reload if playing
     if [ -S "$IPC_SOCKET" ]; then
-        URL=$(get_prop "path")
         POS=$(get_prop "time-pos")
 
         if [ "$URL" != "null" ] && [ -n "$URL" ]; then
@@ -307,7 +367,7 @@ case "$1" in
 
             # Send command to update property and reload
             # This sets ONLY the format string, which is correct (unlike before)
-            echo "{ \"command\": [\"set_property\", \"ytdl-format\", \"$YTDL_FMT\"] }" | socat - "$IPC_SOCKET" >/dev/null
+            echo "{ \"command\": [\"set_property\", \"ytdl-format\", \"$YTDL_FMT\"] }" | socat - "$IPC_SOCKET" > /dev/null
 
             # Seek to current position to force reload/re-buffer (or just reload file)
             # 'loadfile url replace start=POS' is cleanest

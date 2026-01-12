@@ -1,14 +1,16 @@
-# yt-bg: YouTube Live Wallpaper for Niri/Wayland
+# livewall: Live Wallpaper for Niri/Wayland
 
-A standalone tool to search YouTube and play videos as live wallpapers or floating Picture-in-Picture windows. Built for Wayland (Niri/Sway) using `mpvpaper` and `yt-dlp`.
+A standalone tool to play YouTube videos or local video files as live wallpapers or floating Picture-in-Picture windows. Built for Wayland (Niri/Sway) using `mpvpaper` and `yt-dlp`.
 
 ## Features
-- **Fast Search**: Search YouTube directly from the terminal using `fzf`.
+- **YouTube Search**: Search YouTube directly from the terminal using `fzf`.
+- **Local Video Support**: Play local video files from your filesystem.
 - **Thumbnail Previews**: View video thumbnails in the terminal while searching (requires Kitty terminal).
 - **Wallpaper Mode**: Plays video as a seamless desktop wallpaper using `mpvpaper`.
 - **PiP Mode**: Seamlessly toggles between wallpaper and a floating window (`mpv`) while maintaining playback position.
 - **Smart Resume**: Switches back to wallpaper mode exactly where you left off.
-- **CLI Support**: Pass search queries directly as arguments to skip the prompt.
+- **CLI Support**: Pass search queries or file paths directly as arguments to skip the prompt.
+- **History**: Replay previously watched videos (YouTube or local files).
 
 ## Installation
 
@@ -25,7 +27,7 @@ You can run the tool directly without installing it globally:
 nix develop
 
 # Or run directly from the directory
-./bin/yt-bg
+./bin/livewall
 ```
 
 ### Manual Installation (Non-Nix)
@@ -52,49 +54,64 @@ sudo make uninstall
 
 ## Usage
 
-### 1. Search & Play
+### 1. Search & Play YouTube Videos
 You can search interactively or pass a query directly:
 
 ```bash
 # Interactive mode (prompts for input)
-yt-bg
+livewall
 
 # Direct search (skips prompt)
-yt-bg "lofi hip hop radio"
+livewall "lofi hip hop radio"
 
 # View and replay history
-yt-bg history
+livewall history
 ```
 
 Use `Up`/`Down` to navigate results and `Enter` to select. The video will start playing as your wallpaper.
 
-### 2. Control Playback
-Use `yt-bg-control` to manage the active video. It is recommended to bind these commands to keyboard shortcuts in your window manager config (e.g., `config.kdl` for Niri).
+### 2. Play Local Video Files
+Play videos from your local filesystem:
+
+```bash
+# Play a specific video file
+livewall ~/Videos/my-video.mp4
+livewall /path/to/video.mkv
+
+# Browse and select from a directory
+livewall local ~/Videos
+livewall local  # defaults to ~/Videos
+
+# Supported formats: mp4, mkv, webm, avi, mov, flv, m4v, wmv, mpg, mpeg
+```
+
+### 3. Control Playback
+Use `livewall-control` to manage the active video. It is recommended to bind these commands to keyboard shortcuts in your window manager config (e.g., `config.kdl` for Niri).
 
 | Command | Description |
 |---------|-------------|
-| `yt-bg-control toggle-pip` | Switch between Wallpaper and Floating Window (PiP) |
-| `yt-bg-control toggle-pause` | Pause/Resume playback |
-| `yt-bg-control toggle-mute` | Mute/Unmute audio |
-| `yt-bg-control cycle-quality` | Cycle quality (1080p -> 720p -> 480p -> Best) |
-| `yt-bg-control seek-forward` | Seek forward 10 seconds |
-| `yt-bg-control seek-backward` | Seek backward 10 seconds |
-| `yt-bg-control download` | Download the current video (to `~/Downloads`) |
-| `yt-bg-control open` | Open the current video in your default browser |
+| `livewall-control toggle-pip` | Switch between Wallpaper and Floating Window (PiP) |
+| `livewall-control toggle-pause` | Pause/Resume playback |
+| `livewall-control toggle-mute` | Mute/Unmute audio |
+| `livewall-control cycle-quality` | Cycle quality (1080p -> 720p -> 480p -> Best) - YouTube only |
+| `livewall-control seek-forward` | Seek forward 10 seconds |
+| `livewall-control seek-backward` | Seek backward 10 seconds |
+| `livewall-control download` | Download the current video (YouTube only) |
+| `livewall-control open` | Open video in browser (YouTube) or file location (local) |
 
-### 3. Native Player Shortcuts
+### 4. Native Player Shortcuts
 When the PiP window is focused, you can use these keys directly:
-- **`Alt+Shift+Q`**: Cycle video quality (1080p -> 720p -> 480p -> Best)
+- **`Alt+Shift+Q`**: Cycle video quality (1080p -> 720p -> 480p -> Best) - YouTube only
 
-### 4. Example Niri Configuration
+### 5. Example Niri Configuration
 Add these binds to your `~/.config/niri/config.kdl`:
 
 ```kdl
 binds {
-    Mod+W { spawn "yt-bg-control" "toggle-pip"; }
-    Mod+P { spawn "yt-bg-control" "toggle-pause"; }
-    Mod+M { spawn "yt-bg-control" "toggle-mute"; }
-    Mod+Shift+Q { spawn "yt-bg-control" "cycle-quality"; }
+    Mod+W { spawn "livewall-control" "toggle-pip"; }
+    Mod+P { spawn "livewall-control" "toggle-pause"; }
+    Mod+M { spawn "livewall-control" "toggle-mute"; }
+    Mod+Shift+Q { spawn "livewall-control" "cycle-quality"; }
 }
 ```
 
@@ -109,16 +126,23 @@ make test
 ```
 
 ### Directory Structure
-- `bin/`: Executable scripts (`yt-bg`, `yt-bg-control`).
-- `lib/`: Helper scripts (e.g., `preview.sh` for fzf).
+- `bin/`: Executable scripts (`livewall`, `livewall-control`).
+- `lib/`: Helper scripts (e.g., `preview.sh` for fzf, `utils.sh` for common functions).
 - `test/`: Test suite and mock binaries.
 - `flake.nix`: Dependency management and environment setup.
 
-## troubleshooting
+## Troubleshooting
 
 **"Failed to extract valid URL"**
 - Ensure you are running the latest version. This was fixed by handling tab characters in video titles correctly.
-- Check the logs for details: `/tmp/yt-bg-search.log`.
+- Check the logs for details: `/tmp/livewall/search.log`.
 
 **No thumbnails in preview?**
-- Ensure you are running `yt-bg` inside the **Kitty** terminal. Other terminals may show text-only previews.
+- Ensure you are running `livewall` inside the **Kitty** terminal. Other terminals may show text-only previews.
+
+**Local video not playing?**
+- Verify the file exists and has a supported extension (mp4, mkv, webm, avi, mov, flv, m4v, wmv, mpg, mpeg).
+- Check the logs: `/tmp/livewall/control.log`.
+
+**Quality cycling not working for local files?**
+- Quality cycling is only available for YouTube videos. Local files play at their native resolution.

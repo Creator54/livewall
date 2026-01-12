@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# yt-bg: Search YouTube and play video as wallpaper
-# Usage: yt-bg [query|history]
+# livewall: Search YouTube or play local videos as live wallpaper
+# Usage: livewall [query|history|local [directory]|/path/to/video.mp4]
 
 # Resolve Lib Dir & Source Utils
 LIB_DIR=""
 if [ -f "$(dirname "$0")/../lib/utils.sh" ]; then
     LIB_DIR="$(dirname "$0")/../lib"
-elif [ -f "$(dirname "$0")/../lib/yt-bg/utils.sh" ]; then
-    LIB_DIR="$(dirname "$0")/../lib/yt-bg"
+elif [ -f "$(dirname "$0")/../lib/livewall/utils.sh" ]; then
+    LIB_DIR="$(dirname "$0")/../lib/livewall"
 fi
 
 if [ -n "$LIB_DIR" ] && [ -f "$LIB_DIR/utils.sh" ]; then
@@ -21,13 +21,79 @@ fi
 # Resolve Preview Script
 PREVIEW_SCRIPT="${PREVIEW_SCRIPT_PATH:-$LIB_DIR/preview.sh}"
 
-HISTORY_FILE="$HOME/.local/share/yt-bg/history"
+HISTORY_FILE="$HOME/.local/share/livewall/history"
 mkdir -p "$(dirname "$HISTORY_FILE")"
 
 # Local logging wrapper to specific file
 SEARCH_LOG="$RUNTIME_DIR/search.log"
 log_msg() {
     log "$1" "$SEARCH_LOG"
+}
+
+# Supported video extensions for local files
+VIDEO_EXTS="mp4|mkv|webm|avi|mov|flv|m4v|wmv|mpg|mpeg"
+
+# Check if input is a local file path
+is_local_file() {
+    local path="$1"
+    # Expand ~ to home directory
+    path="${path/#\~/$HOME}"
+    
+    if [ -f "$path" ]; then
+        # Check if it has a video extension
+        if echo "$path" | grep -qiE "\\.($VIDEO_EXTS)$"; then
+            echo "$path"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Local File Browser
+browse_local_videos() {
+    local search_dir="${1:-$HOME/Videos}"
+    
+    # Expand ~ to home directory
+    search_dir="${search_dir/#\~/$HOME}"
+    
+    if [ ! -d "$search_dir" ]; then
+        echo "Error: Directory '$search_dir' not found."
+        exit 1
+    fi
+    
+    echo "Searching for videos in: $search_dir"
+    
+    # Find all video files and format for fzf
+    # Format: filename<TAB>path<TAB>size
+    SELECTED=$(find "$search_dir" -type f -regextype posix-extended -iregex ".*\.($VIDEO_EXTS)$" 2>/dev/null | \
+        while IFS= read -r file; do
+            filename=$(basename "$file")
+            size=$(du -h "$file" 2>/dev/null | cut -f1)
+            echo -e "$filename\t$file\t$size"
+        done | \
+        fzf \
+            --delimiter=$'\t' \
+            --with-nth=1,3 \
+            --preview 'echo -e "\033[1;36m📁 File:\033[0m\n   {1}\n\n\033[1;35m📂 Path:\033[0m\n   {2}\n\n\033[1;32m💾 Size:\033[0m\n   {3}"' \
+            --preview-window=right:50%:wrap \
+            --header="Select Local Video" \
+            --prompt="Local> ")
+    
+    if [ -n "$SELECTED" ]; then
+        # Extract file path (2nd field)
+        FILE_PATH=$(echo "$SELECTED" | awk -F'\t' '{print $2}')
+        
+        if [ -f "$FILE_PATH" ]; then
+            # Add to history with [LOCAL] marker
+            TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
+            FILENAME=$(basename "$FILE_PATH")
+            echo -e "${TIMESTAMP}\t[LOCAL] ${FILENAME}\t\t\t${FILE_PATH}\tlocal" >> "$HISTORY_FILE"
+            
+            # Play the file
+            livewall-control play "$FILE_PATH"
+        fi
+    fi
+    exit 0
 }
 
 # History Mode
@@ -57,9 +123,32 @@ if [ "$1" == "history" ]; then
         # Simpler: just play it. If we want to bring to top, we'd need to parse more fields.
         # Let's just play it for now.
 
-        yt-bg-control play "$URL"
+        livewall-control play "$URL"
     fi
     exit 0
+fi
+
+# Local Browser Mode
+if [ "$1" == "local" ]; then
+    shift
+    browse_local_videos "$@"
+fi
+
+# Check if argument is a local file path
+if [ -n "$1" ]; then
+    FILE_PATH=$(is_local_file "$*")
+    if [ $? -eq 0 ]; then
+        log_msg "Playing local file: $FILE_PATH"
+        
+        # Add to history
+        TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
+        FILENAME=$(basename "$FILE_PATH")
+        echo -e "${TIMESTAMP}\t[LOCAL] ${FILENAME}\t\t\t${FILE_PATH}\tlocal" >> "$HISTORY_FILE"
+        
+        # Play the file
+        livewall-control play "$FILE_PATH"
+        exit 0
+    fi
 fi
 
 # Ensure we are in the flake env or have dependencies
@@ -163,6 +252,6 @@ if [ -n "$SELECTED" ]; then
   echo -e "${TIMESTAMP}\t${SELECTED}" >> "$HISTORY_FILE"
 
   # Call control script to play
-  # We assume yt-bg-control is in PATH (added by flake shellHook)
-  yt-bg-control play "$URL"
+  # We assume livewall-control is in PATH (added by flake shellHook)
+  livewall-control play "$URL"
 fi

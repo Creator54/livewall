@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-LOG_FILE="/tmp/yt-bg-test.log"
+LOG_FILE="/tmp/livewall-test.log"
 echo "Called socat with: $*" >> "$LOG_FILE"
 if [ ! -t 0 ]; then
     INPUT=$(cat)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-LOG_FILE="/tmp/yt-bg-test.log"
+LOG_FILE="/tmp/livewall-test.log"
 echo "Called pgrep with: $*" >> "$LOG_FILE"
 if [[ "$*" == *"mpvpaper"* ]]; then
     if [[ -f "/tmp/mock_mpvpaper_running" ]]; then

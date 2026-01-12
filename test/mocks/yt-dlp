@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-LOG_FILE="/tmp/yt-bg-test.log"
+LOG_FILE="/tmp/livewall-test.log"
 echo "Called yt-dlp with: $*" >> "$LOG_FILE"
 # output fake search results
 # Title<TAB>Channel<TAB>Duration<TAB>URL<TAB>VideoID

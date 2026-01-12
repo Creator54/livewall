@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-LOG_FILE="/tmp/yt-bg-test.log"
+LOG_FILE="/tmp/livewall-test.log"
 echo "Called fzf with: $*" >> "$LOG_FILE"
 # Read stdin to drain it
 cat > /dev/null
