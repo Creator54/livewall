@@ -8,8 +8,6 @@ if [ -f "$(dirname "$0")/../lib/utils.sh" ]; then
     LIB_DIR="$(dirname "$0")/../lib"
 elif [ -f "$(dirname "$0")/../lib/yt-bg/utils.sh" ]; then
     LIB_DIR="$(dirname "$0")/../lib/yt-bg"
-elif [ -d "/usr/local/lib/yt-bg" ]; then
-    LIB_DIR="/usr/local/lib/yt-bg"
 fi
 
 if [ -n "$LIB_DIR" ] && [ -f "$LIB_DIR/utils.sh" ]; then
