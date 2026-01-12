@@ -17,7 +17,14 @@
 
         src = ./.;
 
-        buildInputs = with pkgs; [ makeWrapper ];
+        nativeBuildInputs = with pkgs; [ makeWrapper ];
+        
+        # Include OpenGL/graphics libraries that mpv needs
+        buildInputs = with pkgs; [
+          mesa
+          libGL
+          libglvnd
+        ];
 
         dontBuild = true;
 
@@ -34,7 +41,14 @@
           chmod +x $out/bin/* $out/lib/*
         '';
 
-        postFixup = ''
+        postFixup = let
+          # Create library path with OpenGL dependencies
+          libPath = pkgs.lib.makeLibraryPath [
+            pkgs.mesa
+            pkgs.libGL
+            pkgs.libglvnd
+          ];
+        in ''
           # Wrap yt-bg with dependencies
           wrapProgram $out/bin/yt-bg \
             --prefix PATH : ${pkgs.lib.makeBinPath [
@@ -54,7 +68,7 @@
               pkgs.gawk
               pkgs.gnused
             ]} \
-            --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib" \
+            --prefix LD_LIBRARY_PATH : "${libPath}" \
             --set PREVIEW_SCRIPT_PATH "$out/lib/preview.sh"
 
           # Wrap yt-bg-control with dependencies
@@ -72,7 +86,7 @@
               pkgs.xdg-utils
               pkgs.axel
             ]} \
-            --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib" \
+            --prefix LD_LIBRARY_PATH : "${libPath}" \
             --set MPRIS_SCRIPT_PATH "${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so" \
             --set QUALITY_SCRIPT_PATH "$out/lib/quality-cycle.lua"
         '';
@@ -105,11 +119,22 @@
           # Script dependencies
           gawk
           gnused
+          
+          # Graphics libraries
+          mesa
+          libGL
+          libglvnd
         ];
 
-        shellHook = ''
+        shellHook = let
+          libPath = pkgs.lib.makeLibraryPath [
+            pkgs.mesa
+            pkgs.libGL
+            pkgs.libglvnd
+          ];
+        in ''
           export PATH=$PWD/bin:$PWD/lib:$PATH
-          export LD_LIBRARY_PATH=/run/opengl-driver/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=${libPath}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
           export MPRIS_SCRIPT_PATH="${pkgs.mpvScripts.mpris}/share/mpv/scripts/mpris.so"
           export QUALITY_SCRIPT_PATH="$PWD/lib/quality-cycle.lua"
           export PREVIEW_SCRIPT_PATH="$PWD/lib/preview.sh"
