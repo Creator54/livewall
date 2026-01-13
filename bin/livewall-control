@@ -119,6 +119,15 @@ case "$1" in
     URL="$2"
     if [ -z "$URL" ]; then exit 1; fi
 
+    # Prevent concurrent executions with lock file
+    LOCK_FILE="$RUNTIME_DIR/play.lock"
+    exec 9>"$LOCK_FILE"
+    if ! flock -n 9; then
+        log_info "Another play command is running, waiting..."
+        flock 9  # Wait for lock
+    fi
+    trap 'rm -f "$LOCK_FILE"' EXIT
+
     log_info "=== PLAY COMMAND INITIATED ==="
     log_info "URL: $URL"
 
