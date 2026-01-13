@@ -138,8 +138,20 @@ case "$1" in
         log_debug "MPV options: $MPV_OPTS"
     fi
 
-    # Check if either mpvpaper or mpv (pip) is running on the socket
-    if [ -S "$IPC_SOCKET" ] && (pgrep -f "mpvpaper.*$IPC_SOCKET" || pgrep -f "mpv.*$IPC_SOCKET"); then
+    # Check if socket exists AND is functional (not stale)
+    SOCKET_ALIVE=false
+    if [ -S "$IPC_SOCKET" ]; then
+        # Verify socket is actually responding (not stale)
+        if echo '{ "command": ["get_property", "path"] }' | timeout 1 socat - "$IPC_SOCKET" > /dev/null 2>&1; then
+            SOCKET_ALIVE=true
+            log_debug "Socket is alive and responding"
+        else
+            log_debug "Socket exists but not responding (stale), will restart"
+            rm -f "$IPC_SOCKET"
+        fi
+    fi
+    
+    if [ "$SOCKET_ALIVE" = true ] && (pgrep -f "mpvpaper" > /dev/null || pgrep -f "mpv" > /dev/null); then
        log_info "Existing player found, switching video via IPC"
        log_debug "IPC socket: $IPC_SOCKET"
        echo "loadfile \"$URL\"" | socat - "$IPC_SOCKET"
