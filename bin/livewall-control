@@ -36,6 +36,13 @@ log_debug() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DEBUG] $1" >> "$CONTROL_LOG"
 }
 
+# Log environment state for debugging
+log_env() {
+    log_debug "ENV: WAYLAND_DISPLAY=$WAYLAND_DISPLAY XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
+    log_debug "ENV: PATH contains livewall: $(echo $PATH | grep -o '/[^:]*livewall[^:]*' | head -1)"
+    log_debug "STATE: mpvpaper=$(pgrep mpvpaper || echo 'none') swaybg=$(pgrep swaybg || echo 'none')"
+}
+
 # Check if path is a local file (replaced by shared utils)
 # is_local_video_file() removed
 
@@ -129,6 +136,7 @@ case "$1" in
     trap 'rm -f "$LOCK_FILE"' EXIT
 
     log_info "=== PLAY COMMAND INITIATED ==="
+    log_env
     log_info "URL: $URL"
 
     # Check if it's a local file
