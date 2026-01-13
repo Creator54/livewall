@@ -5,7 +5,7 @@
 local utils = require 'mp.utils'
 local msg = require 'mp.msg'
 
-local QUALITY_FILE = "/tmp/livewall-quality"
+local QUALITY_FILE = os.getenv("XDG_RUNTIME_DIR") and (os.getenv("XDG_RUNTIME_DIR") .. "/livewall/quality") or "/tmp/livewall/quality"
 local qualities = {
     "1080p",
     "720p",
