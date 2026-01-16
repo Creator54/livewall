@@ -116,7 +116,7 @@ case "$1" in
     echo "  seek-backward         Seek backward 10s"
     echo "  download              Download current video (YouTube only)"
     echo "  open                  Open video in browser or file manager"
-    echo "  cycle-fit             Cycle aspect ratio fit modes"
+    echo "  cycle-fit             Cycle aspect ratio fit modes (starts at fill mode)"
     echo "  cycle-aspect          Cycle proper aspect ratio overrides"
     echo "  --help, -h            Show this help message"
     exit 0
@@ -146,11 +146,11 @@ case "$1" in
     if [ $IS_LOCAL -eq 0 ]; then
         log_info "Detected local file: $LOCAL_FILE"
         URL="$LOCAL_FILE"
-        MPV_OPTS="--hwdec=no $PERF_FLAGS"
+        MPV_OPTS="--hwdec=no --panscan=1.0 --keepaspect=yes --keepaspect-window=yes --video-unscaled=no $PERF_FLAGS"
         log_debug "Using local file options: $MPV_OPTS"
     else
         FMT=$(get_fmt_string "$CURRENT_QUALITY")
-        MPV_OPTS="--ytdl-format=$FMT --hwdec=no $PERF_FLAGS $COOKIE_OPTS"
+        MPV_OPTS="--ytdl-format=$FMT --hwdec=no --panscan=1.0 --keepaspect=yes --keepaspect-window=yes --video-unscaled=no $PERF_FLAGS $COOKIE_OPTS"
         log_info "Using YouTube with quality: $CURRENT_QUALITY"
         log_debug "MPV options: $MPV_OPTS"
     fi
@@ -236,22 +236,22 @@ case "$1" in
     # Check if it's a local file
     LOCAL_FILE=$(is_local_video_file "$URL")
     IS_LOCAL=$?
-    
+
     # Use stream URL if available (faster), otherwise fallback to original URL
     PLAY_URL="$URL"
     if [ $IS_LOCAL -eq 0 ]; then
         # Local file - use original path
         PLAY_URL="$LOCAL_FILE"
-        MPV_OPTS="--hwdec=no $PERF_FLAGS"
+        MPV_OPTS="--hwdec=no --panscan=1.0 --keepaspect=yes --keepaspect-window=yes --video-unscaled=no $PERF_FLAGS"
         log_msg "Local file detected for PiP toggle"
     elif [ "$STREAM_URL" != "null" ] && [ -n "$STREAM_URL" ]; then
         PLAY_URL="$STREAM_URL"
         FMT=$(get_fmt_string "$CURRENT_QUALITY")
-        MPV_OPTS="--ytdl-format=$FMT --hwdec=no $PERF_FLAGS $COOKIE_OPTS"
+        MPV_OPTS="--ytdl-format=$FMT --hwdec=no --panscan=1.0 --keepaspect=yes --keepaspect-window=yes --video-unscaled=no $PERF_FLAGS $COOKIE_OPTS"
         log_msg "Using direct stream URL (Fast switch)"
     else
         FMT=$(get_fmt_string "$CURRENT_QUALITY")
-        MPV_OPTS="--ytdl-format=$FMT --hwdec=no $PERF_FLAGS $COOKIE_OPTS"
+        MPV_OPTS="--ytdl-format=$FMT --hwdec=no --panscan=1.0 --keepaspect=yes --keepaspect-window=yes --video-unscaled=no $PERF_FLAGS $COOKIE_OPTS"
         log_msg "Stream URL missing. Falling back to resolving URL (Slow switch)"
     fi
 
@@ -331,8 +331,8 @@ case "$1" in
     echo 'cycle mute' | socat - "$IPC_SOCKET"
     ;;
   "cycle-fit")
-    # Cycle between 0.0 (Fit with bars, no crop) and 1.0 (Fill/Crop, no bars)
-    echo 'cycle-values panscan 0.0 1.0' | socat - "$IPC_SOCKET"
+    # Cycle between 1.0 (Fill/Crop to screen, default) and 0.0 (Auto-fit to screen, no crop)
+    echo 'cycle-values panscan 1.0 0.0' | socat - "$IPC_SOCKET"
     ;;
   "cycle-aspect")
     # Cycle video aspect ratio override: Original -> 16:9 (Stretch to Wide) -> 4:3 (Stretch to Box)

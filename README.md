@@ -98,7 +98,7 @@ Use `livewall-control` to manage the active video. It is recommended to bind the
 | `livewall-control seek-backward` | Seek backward 10 seconds |
 | `livewall-control download` | Download the current video (YouTube only) |
 | `livewall-control open` | Open video in browser (YouTube) or file location (local) |
-| `livewall-control cycle-fit` | Toggle crop: Fit (black bars) vs Fill (crop to screen) |
+| `livewall-control cycle-fit` | Toggle crop: Fill (crop to screen, default) vs Auto-fit (no crop, black bars) |
 | `livewall-control cycle-aspect` | Cycle aspect ratio: Original -> 16:9 -> 4:3 |
 
 ### 4. Native Player Shortcuts
