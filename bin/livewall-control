@@ -360,13 +360,20 @@ case "$1" in
        notify-send "Live Wallpaper" "Downloading: $TITLE"
 
        if command -v "$TERMINAL" > /dev/null; then
-            # Check for axel
-            DL_ARGS=""
+            # Check for axel - but avoid using it for long URLs due to limitations
             if command -v axel > /dev/null; then
-                DL_ARGS="--external-downloader axel --external-downloader-args '-n 10'"
+                # Check URL length - if it's too long (>1000 chars), use yt-dlp's built-in downloader instead
+                if [ ${#URL} -gt 1000 ]; then
+                    notify-send "Warning" "Long URL detected, using built-in downloader instead of axel"
+                    # Use yt-dlp without external downloader for long URLs
+                    $TERMINAL --class floating-term --hold -e sh -c "yt-dlp -o '$HOME/Downloads/%(title)s.%(ext)s' '$URL'; echo \"\"; echo 'Download finished. Press Enter to close.'; read" &
+                else
+                    $TERMINAL --class floating-term --hold -e sh -c "yt-dlp --external-downloader axel --external-downloader-args '-n 10' -o '$HOME/Downloads/%(title)s.%(ext)s' '$URL'; echo \"\"; echo 'Download finished. Press Enter to close.'; read" &
+                fi
+            else
+                # axel not available, use built-in downloader
+                $TERMINAL --class floating-term --hold -e sh -c "yt-dlp -o '$HOME/Downloads/%(title)s.%(ext)s' '$URL'; echo \"\"; echo 'Download finished. Press Enter to close.'; read" &
             fi
-
-            $TERMINAL --class floating-term --hold -e sh -c "yt-dlp $DL_ARGS -o '$HOME/Downloads/%(title)s.%(ext)s' '$URL'; echo \"\"; echo 'Download finished. Press Enter to close.'; read" &
        else
             notify-send "Error" "Terminal '$TERMINAL' not found for download."
        fi
