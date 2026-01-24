@@ -325,7 +325,16 @@ case "$1" in
     ;;
 
   "toggle-pause")
+    # Get current pause state before toggling
+    PAUSED=$(get_prop "pause")
+    
+    # Toggle pause
     echo 'cycle pause' | socat - "$IPC_SOCKET"
+    
+    # If we were paused (now resuming), kill swaybg so video layer is visible
+    if [ "$PAUSED" = "true" ]; then
+        pkill swaybg 2>/dev/null || true
+    fi
     ;;
   "toggle-mute")
     echo 'cycle mute' | socat - "$IPC_SOCKET"
