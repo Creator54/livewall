@@ -165,6 +165,13 @@ if [ -z "$QUERY" ]; then
   exit 0
 fi
 
+# Detect YouTube URLs and play directly
+if [[ "$QUERY" =~ ^https?://((www\.|m\.)?youtube\.com/watch\?v=|youtu\.be/) ]]; then
+    log_msg "Detected YouTube URL, playing directly: $QUERY"
+    livewall-control play "$QUERY"
+    exit 0
+fi
+
 # Zen Browser (Firefox-based) profile detection for cookies
 ZEN_PROFILE=$(detect_zen_profile)
 declare -a COOKIE_ARGS
