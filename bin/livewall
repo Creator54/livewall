@@ -28,6 +28,7 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
     echo "  /path/to/file.mp4     Play local video file directly"
     echo "  local [dir]           Browse local videos (default: ~/Videos)"
     echo "  history               Browse and replay playback history"
+    echo "  logs [-f] [control|search|preview]  View logs (-f to follow)"
     echo "  --help, -h            Show this help message"
     exit 0
 fi
@@ -119,6 +120,35 @@ if [ "$1" == "history" ]; then
         # Let's just play it for now.
 
         livewall-control play "$URL"
+    fi
+    exit 0
+fi
+
+# Logs Mode
+if [ "$1" == "logs" ]; then
+    shift
+    FOLLOW=false
+    LOG_FILE="control"
+    
+    # Parse flags
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -f|--follow) FOLLOW=true; shift ;;
+            control|search|preview) LOG_FILE="$1"; shift ;;
+            *) echo "Unknown option: $1"; exit 1 ;;
+        esac
+    done
+    
+    FILE="$RUNTIME_DIR/${LOG_FILE}.log"
+    if [ ! -f "$FILE" ]; then
+        echo "No logs found. Run livewall first."
+        exit 1
+    fi
+    
+    if [ "$FOLLOW" = true ]; then
+        tail -f "$FILE"
+    else
+        tail -50 "$FILE"
     fi
     exit 0
 fi

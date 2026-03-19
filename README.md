@@ -13,7 +13,7 @@ Play YouTube videos or local files as live wallpapers on Wayland (Niri/Sway/Hypr
 
 ### Nix (Flakes)
 ```bash
-nix profile install github:creator54/livewall
+nix profile install github:creator54/livewall/v3
 nix run github:creator54/livewall  # Run without installing
 ```
 
@@ -44,6 +44,14 @@ livewall history                       # Replay history
 | `livewall-control seek-backward` | -10s |
 | `livewall-control download` | Download video |
 | `livewall-control open` | Open in browser |
+
+### Logs
+```bash
+livewall logs              # Show last 50 lines (control.log)
+livewall logs search       # Search log
+livewall logs preview      # Preview log
+livewall logs -f           # Follow control.log
+```
 
 ### Niri Keybinds
 ```kdl
