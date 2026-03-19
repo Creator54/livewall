@@ -25,11 +25,12 @@ sudo make install  # Requires: mpvpaper, mpv, yt-dlp, socat, jq, fzf, swaybg
 ## Usage
 
 ```bash
-livewall                           # Search YouTube
-livewall "lofi hip hop"            # Direct search
-livewall ~/Videos/video.mp4        # Local file
-livewall local                     # Browse ~/Videos
-livewall history                   # Replay history
+livewall                               # Search YouTube
+livewall "lofi hip hop"                # Direct search
+livewall https://youtu.be/dQw4w9WgXcQ  # YouTube URL
+livewall ~/Videos/video.mp4            # Local file
+livewall local                         # Browse ~/Videos
+livewall history                       # Replay history
 ```
 
 ### Controls
