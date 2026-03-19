@@ -14,11 +14,12 @@ local qualities = {
 }
 
 -- Map quality names to ytdl-format strings
+-- We prefer non-AV1 codecs (vp9/h264) but allow fallback to avoid "format not available" errors
 local formats = {
-    ["best"] = "bestvideo[vcodec!^=av01]+bestaudio/best",
-    ["1080p"] = "bestvideo[height<=1080][vcodec!^=av01]+bestaudio/best[height<=1080]",
-    ["720p"] = "bestvideo[height<=720][vcodec!^=av01]+bestaudio/best[height<=720]",
-    ["480p"] = "bestvideo[height<=480][vcodec!^=av01]+bestaudio/best[height<=480]"
+    ["best"] = "bestvideo+bestaudio/best",
+    ["1080p"] = "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
+    ["720p"] = "bestvideo[height<=720]+bestaudio/best[height<=720]",
+    ["480p"] = "bestvideo[height<=480]+bestaudio/best[height<=480]"
 }
 
 -- Get current quality from file or default

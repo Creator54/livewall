@@ -1,90 +1,59 @@
 # livewall: Live Wallpaper for Niri/Wayland
 
-Play YouTube videos or local files as live wallpapers on Wayland (Niri/Sway/Hyprland). Built with `mpvpaper` and `yt-dlp`.
+Play YouTube videos or local files as live wallpapers on Wayland (Niri/Sway/Hyprland).
 
 ## Features
-- **YouTube Search**: Browse and play YouTube videos via `fzf`
-- **Local Videos**: Play files from your filesystem
-- **Thumbnail Previews**: In-terminal previews (Kitty required)
-- **Wallpaper & PiP**: Toggle between desktop wallpaper and floating window
-- **Smart Resume**: Maintains playback position when switching modes
-- **History**: Replay previously watched videos
-- **Cookie Auth**: Auto-uses Firefox/Zen Browser cookies for recommendations
+- **YouTube Search**: Search and play via `fzf`
+- **Local Videos**: Play from filesystem
+- **Thumbnail Previews**: In-terminal (Kitty required)
+- **Wallpaper & PiP**: Toggle desktop/floating modes
+- **History**: Replay watched videos
 
-## Quick Start
+## Install
 
-### Install (Nix with Flakes)
+### Nix (Flakes)
 ```bash
 nix profile install github:creator54/livewall
+nix run github:creator54/livewall  # Run without installing
 ```
 
-### Run Without Installing
+### Manual
 ```bash
-nix run github:creator54/livewall
-```
-
-### Manual Install (Non-Nix)
-**Dependencies**: `mpvpaper`, `mpv`, `yt-dlp`, `socat`, `jq`, `fzf`, `swaybg`
-
-```bash
-sudo make install
-```
-
-### Uninstall
-```bash
-# Nix
-nix profile remove livewall
-
-# Manual
-sudo make uninstall
+sudo make install  # Requires: mpvpaper, mpv, yt-dlp, socat, jq, fzf, swaybg
 ```
 
 ## Usage
 
-### Search & Play
 ```bash
-livewall                           # Interactive search
-livewall "lofi hip hop radio"      # Direct search
-livewall rec                       # Personalized recommendations (requires Firefox/Zen cookies)
-livewall history                   # View/replay history
-```
-
-### Local Videos
-```bash
-livewall ~/Videos/my-video.mp4     # Specific file
-livewall local ~/Videos            # Browse directory
+livewall                           # Search YouTube
+livewall "lofi hip hop"            # Direct search
+livewall ~/Videos/video.mp4        # Local file
 livewall local                     # Browse ~/Videos
+livewall history                   # Replay history
 ```
 
-### Control Playback
+### Controls
 | Command | Description |
 |---------|-------------|
-| `livewall-control toggle-pip` | Toggle Wallpaper ↔ Floating Window |
+| `livewall-control toggle-pip` | Wallpaper ↔ PiP |
 | `livewall-control toggle-pause` | Pause/Resume |
 | `livewall-control toggle-mute` | Mute/Unmute |
-| `livewall-control cycle-quality` | Cycle quality (YouTube only) |
-| `livewall-control seek-forward` | Seek +10s |
-| `livewall-control seek-backward` | Seek -10s |
-| `livewall-control download` | Download video (YouTube) |
-| `livewall-control open` | Open in browser/file manager |
+| `livewall-control cycle-quality` | 1080p → 720p → 480p → best |
+| `livewall-control seek-forward` | +10s |
+| `livewall-control seek-backward` | -10s |
+| `livewall-control download` | Download video |
+| `livewall-control open` | Open in browser |
 
-### Example Niri Keybinds
-Add to `~/.config/niri/config.kdl`:
+### Niri Keybinds
 ```kdl
 binds {
     Mod+W { spawn "livewall-control" "toggle-pip"; }
     Mod+P { spawn "livewall-control" "toggle-pause"; }
     Mod+M { spawn "livewall-control" "toggle-mute"; }
-    Mod+Shift+Q { spawn "livewall-control" "cycle-quality"; }
 }
 ```
 
 ## Troubleshooting
 - **No thumbnails?** Use Kitty terminal
-- **Local video not playing?** Check supported formats: mp4, mkv, webm, avi, mov, flv, m4v, wmv, mpg, mpeg
-- **Logs**: `/tmp/livewall/search.log`, `/tmp/livewall/control.log`
-
-## Development
-```bash
-make test          # Run test suite
-```
+- **Video not playing?** Formats: mp4, mkv, webm, avi, mov, flv, m4v, wmv, mpg, mpeg
+- **Logs**: `/tmp/livewall/control.log`

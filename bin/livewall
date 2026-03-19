@@ -28,7 +28,6 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
     echo "  /path/to/file.mp4     Play local video file directly"
     echo "  local [dir]           Browse local videos (default: ~/Videos)"
     echo "  history               Browse and replay playback history"
-    echo "  rec | feed            Browse YouTube recommendations"
     echo "  --help, -h            Show this help message"
     exit 0
 fi
@@ -172,57 +171,30 @@ if [[ "$QUERY" =~ ^https?://((www\.|m\.)?youtube\.com/watch\?v=|youtu\.be/) ]]; 
     exit 0
 fi
 
-# Zen Browser (Firefox-based) profile detection for cookies
-ZEN_PROFILE=$(detect_zen_profile)
-declare -a COOKIE_ARGS
-if [ -n "$ZEN_PROFILE" ]; then
-    # We found a profile, use it
-    # Add User-Agent to match the playback script and avoid throttling
-    UA="Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0"
-    COOKIE_ARGS=("--cookies-from-browser" "firefox:$ZEN_PROFILE" "--user-agent" "$UA")
-fi
+# Cookie Authentication: DISABLED
+# YouTube's JS challenge solver is broken in current yt-dlp versions (2026.02.x)
+# For most use cases (streaming wallpapers), authentication is not needed
+# If you need authenticated access (e.g., age-restricted content), export
+# cookies manually from Firefox and use: yt-dlp --cookies cookies.txt
+declare -a COOKIE_ARGS=()
 
 log_msg "Searching for: $QUERY"
 
-# Construct yt-dlp command based on query
-# If query is "rec" or "feed", fetch recommendations (requires cookies)
-if [[ "$QUERY" == "rec" || "$QUERY" == "feed" ]]; then
-    if [ ${#COOKIE_ARGS[@]} -eq 0 ]; then
-        echo "Error: Recommendations require browser cookies (Zen Browser profile not found)."
-        exit 1
-    fi
-    echo "Fetching recommendations..."
+# Fetch and Stream to FZF (Search)
+# Note: Using empty COOKIE_ARGS array - no authentication
+echo "Searching..."
 
-    # Fetch and Stream to FZF (Recommendations)
-    # We use --no-mouse to prevent accidental clicks from selecting/printing text if that's the issue
-    SELECTED=$(yt-dlp "${COOKIE_ARGS[@]}" \
-      --print $'%(title)s\t%(channel)s\t%(duration_string)s\t%(webpage_url)s\t%(id)s' \
-      --flat-playlist --no-warnings \
-      "https://www.youtube.com/feed/recommended" \
-      | awk -F'\t' '!seen[$NF]++ {print; fflush()}' \
-      | fzf \
-        --delimiter=$'\t' \
-        --with-nth=1 \
-        --no-mouse \
-        --preview "$PREVIEW_SCRIPT {}" \
-        --preview-window=right:50%:wrap)
-
-else
-    echo "Searching..."
-
-    # Fetch and Stream to FZF (Search)
-    SELECTED=$(yt-dlp "${COOKIE_ARGS[@]}" \
-      --print $'%(title)s\t%(channel)s\t%(duration_string)s\t%(webpage_url)s\t%(id)s' \
-      --flat-playlist --no-warnings \
-      "ytsearch20:$QUERY" \
-      | awk -F'\t' '!seen[$NF]++ {print; fflush()}' \
-      | fzf \
-        --delimiter=$'\t' \
-        --with-nth=1 \
-        --no-mouse \
-        --preview "$PREVIEW_SCRIPT {}" \
-        --preview-window=right:50%:wrap)
-fi
+SELECTED=$(yt-dlp "${COOKIE_ARGS[@]}" \
+  --print $'%(title)s\t%(channel)s\t%(duration_string)s\t%(webpage_url)s\t%(id)s' \
+  --flat-playlist --no-warnings \
+  "ytsearch20:$QUERY" \
+  | awk -F'\t' '!seen[$NF]++ {print; fflush()}' \
+  | fzf \
+    --delimiter=$'\t' \
+    --with-nth=1 \
+    --no-mouse \
+    --preview "$PREVIEW_SCRIPT {}" \
+    --preview-window=right:50%:wrap)
 
 if [ -n "$SELECTED" ]; then
   log_msg "Selected raw: $SELECTED"

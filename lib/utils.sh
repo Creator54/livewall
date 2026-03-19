@@ -9,8 +9,6 @@ mkdir -p "$RUNTIME_DIR"
 # Standardize File Paths
 export IPC_SOCKET="$RUNTIME_DIR/socket"
 export QUALITY_FILE="$RUNTIME_DIR/quality"
-export COOKIE_CONFIG="$RUNTIME_DIR/mpv_cookies.conf"
-export ZEN_PROFILE_LINK="$RUNTIME_DIR/zen-profile"
 export CACHE_DIR="$RUNTIME_DIR/thumbs"
 mkdir -p "$CACHE_DIR"
 
@@ -33,20 +31,6 @@ is_local_video_file() {
             realpath "$path" 2>/dev/null
             return 0
         fi
-    fi
-    return 1
-}
-
-# Browser Detection Logic
-detect_zen_profile() {
-    local zen_dir="$HOME/.zen"
-    if [ -d "$zen_dir" ]; then
-        for dir in "$zen_dir/"*".Default Profile"; do
-            if [ -d "$dir" ]; then
-                echo "$dir"
-                return 0
-            fi
-        done
     fi
     return 1
 }

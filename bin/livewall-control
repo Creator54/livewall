@@ -46,20 +46,12 @@ log_env() {
 # Check if path is a local file (replaced by shared utils)
 # is_local_video_file() removed
 
-# Zen Browser (Firefox-based) profile detection for cookies
-ZEN_PROFILE=$(detect_zen_profile)
+# Cookie Authentication: DISABLED
+# YouTube's JS challenge solver is broken in current yt-dlp versions (2026.02.x)
+# Cookies cause more problems than they solve for wallpaper streaming
+# If you need authenticated access (e.g., age-restricted content), export
+# cookies manually and add: --cookies /path/to/cookies.txt to MPV_OPTS
 COOKIE_OPTS=""
-if [ -n "$ZEN_PROFILE" ]; then
-    # Create a symlink to avoid space issues in MPV/yt-dlp options (e.g. "Default Profile")
-    rm -f "$ZEN_PROFILE_LINK"
-    ln -s "$ZEN_PROFILE" "$ZEN_PROFILE_LINK"
-
-    # Write complex options to a config file to avoid CLI parsing issues with spaces/semicolons
-    echo "ytdl-raw-options-append=cookies-from-browser=firefox:$ZEN_PROFILE_LINK" > "$COOKIE_CONFIG"
-    echo "ytdl-raw-options-append=user-agent=Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0" >> "$COOKIE_CONFIG"
-
-    COOKIE_OPTS="--include=$COOKIE_CONFIG"
-fi
 
 # Performance Flags:
 # --cache=yes --demuxer-max-bytes=512M: Aggressive buffering for high-speed connections
@@ -68,15 +60,16 @@ PERF_FLAGS="--cache=yes --demuxer-max-bytes=512M --demuxer-max-back-bytes=100M"
 
 # Quality Definitions
 # default: 1080p
-# We exclude AV1 ([vcodec!^=av01]) because we are forcing software decoding (--hwdec=no).
+# We prefer non-AV1 codecs (vp9/h264) because we are forcing software decoding (--hwdec=no).
 # AV1 software decoding is very CPU intensive and causes stuttering/freezing.
+# However, we allow AV1 as fallback (+best) when preferred formats aren't available.
 get_fmt_string() {
     case "$1" in
-        "best") echo "bestvideo[vcodec!^=av01]+bestaudio/best" ;;
-        "1080p") echo "bestvideo[height<=1080][vcodec!^=av01]+bestaudio/best[height<=1080]" ;;
-        "720p") echo "bestvideo[height<=720][vcodec!^=av01]+bestaudio/best[height<=720]" ;;
-        "480p") echo "bestvideo[height<=480][vcodec!^=av01]+bestaudio/best[height<=480]" ;;
-        *) echo "bestvideo[height<=1080][vcodec!^=av01]+bestaudio/best[height<=1080]" ;;
+        "best") echo "bestvideo+bestaudio/best" ;;
+        "1080p") echo "bestvideo[height<=1080]+bestaudio/best[height<=1080]" ;;
+        "720p") echo "bestvideo[height<=720]+bestaudio/best[height<=720]" ;;
+        "480p") echo "bestvideo[height<=480]+bestaudio/best[height<=480]" ;;
+        *) echo "bestvideo[height<=1080]+bestaudio/best[height<=1080]" ;;
     esac
 }
 
