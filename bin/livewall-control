@@ -101,6 +101,7 @@ case "$1" in
     echo ""
     echo "Commands:"
     echo "  play <url|path>       Play video from URL or local path"
+    echo "  stop                  Stop playback and restore wallpaper"
     echo "  toggle-pip            Toggle between Wallpaper and PiP mode"
     echo "  toggle-pause          Pause/Resume playback"
     echo "  toggle-mute           Mute/Unmute audio"
@@ -203,6 +204,36 @@ case "$1" in
     else
        log_info "mpvpaper started successfully"
     fi
+    ;;
+
+  "stop")
+    log_info "=== STOPPING PLAYBACK ==="
+    
+    # Kill all player processes silently
+    pkill mpvpaper 2>/dev/null || true
+    pkill mpv 2>/dev/null || true
+    
+    # Wait for processes to die
+    count=0
+    while (pgrep -f "mpvpaper" > /dev/null || pgrep -f "mpv" > /dev/null) && [ $count -lt 20 ]; do
+        sleep 0.1
+        count=$((count+1))
+    done
+    
+    # Force kill if still running
+    pkill -9 mpvpaper 2>/dev/null || true
+    pkill -9 mpv 2>/dev/null || true
+    
+    # Clean up socket
+    rm -f "$IPC_SOCKET"
+    
+    # Restore static wallpaper if available (silent)
+    if [ -f "$HOME/.current_wallpaper" ]; then
+        swaybg -m fill -i "$HOME/.current_wallpaper" >/dev/null 2>&1 &
+    fi
+    
+    log_info "Playback stopped"
+    notify-send "Live Wallpaper" "Stopped"
     ;;
 
   "toggle-pip")

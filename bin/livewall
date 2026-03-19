@@ -28,6 +28,7 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
     echo "  /path/to/file.mp4     Play local video file directly"
     echo "  local [dir]           Browse local videos (default: ~/Videos)"
     echo "  history               Browse and replay playback history"
+    echo "  stop                  Stop playback"
     echo "  logs [-f] [control|search|preview]  View logs (-f to follow)"
     echo "  --help, -h            Show this help message"
     exit 0
@@ -121,6 +122,12 @@ if [ "$1" == "history" ]; then
 
         livewall-control play "$URL"
     fi
+    exit 0
+fi
+
+# Stop Mode
+if [ "$1" == "stop" ]; then
+    livewall-control stop
     exit 0
 fi
 

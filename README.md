@@ -31,11 +31,13 @@ livewall https://youtu.be/dQw4w9WgXcQ  # YouTube URL
 livewall ~/Videos/video.mp4            # Local file
 livewall local                         # Browse ~/Videos
 livewall history                       # Replay history
+livewall stop                          # Stop playback
 ```
 
 ### Controls
 | Command | Description |
 |---------|-------------|
+| `livewall stop` | Stop playback |
 | `livewall-control toggle-pip` | Wallpaper ↔ PiP |
 | `livewall-control toggle-pause` | Pause/Resume |
 | `livewall-control toggle-mute` | Mute/Unmute |
