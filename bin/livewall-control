@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # livewall-control: Control live wallpaper playback (YouTube or local videos)
-# Commands: play <url|path>, toggle-pip, toggle-pause, toggle-mute, cycle-quality, seek-forward, seek-backward, download, open
+# Usage: livewall-control <command> [args]
+# Commands: play, stop, toggle-pip, toggle-pause, toggle-mute, cycle-quality, cycle-fit, cycle-aspect, seek-forward, seek-backward, download, open
 
 # Resolve Lib Dir & Source Utils
 LIB_DIR=""
@@ -18,11 +19,8 @@ else
     exit 1
 fi
 
-# Local logging wrapper with severity levels
+# Logging configuration
 CONTROL_LOG="$RUNTIME_DIR/control.log"
-log_msg() {
-    log "$1" "$CONTROL_LOG"
-}
 
 log_info() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $1" >> "$CONTROL_LOG"
@@ -96,23 +94,24 @@ get_prop() {
 
 case "$1" in
   "--help"|"-h")
-    echo "livewall-control - Playback controller for livewall"
+    echo "livewall-control - Playback Controller"
+    echo ""
     echo "Usage: livewall-control <command> [args]"
     echo ""
     echo "Commands:"
-    echo "  play <url|path>       Play video from URL or local path"
-    echo "  stop                  Stop playback and restore wallpaper"
-    echo "  toggle-pip            Toggle between Wallpaper and PiP mode"
-    echo "  toggle-pause          Pause/Resume playback"
-    echo "  toggle-mute           Mute/Unmute audio"
-    echo "  cycle-quality         Cycle video quality (1080p -> 720p -> ...)"
-    echo "  seek-forward          Seek forward 10s"
-    echo "  seek-backward         Seek backward 10s"
-    echo "  download              Download current video (YouTube only)"
-    echo "  open                  Open video in browser or file manager"
-    echo "  cycle-fit             Cycle aspect ratio fit modes (starts at fill mode)"
-    echo "  cycle-aspect          Cycle proper aspect ratio overrides"
-    echo "  --help, -h            Show this help message"
+    echo "  play <url|path>    Play video from URL or local file"
+    echo "  stop               Stop playback"
+    echo "  toggle-pip         Toggle wallpaper ↔ floating window"
+    echo "  toggle-pause       Pause/resume playback"
+    echo "  toggle-mute        Mute/unmute audio"
+    echo "  cycle-quality      Cycle quality (1080p → 720p → 480p → best)"
+    echo "  cycle-fit          Cycle fit mode (fill → fit)"
+    echo "  cycle-aspect       Cycle aspect ratio (original → 16:9 → 4:3)"
+    echo "  seek-forward       Seek forward 10 seconds"
+    echo "  seek-backward      Seek backward 10 seconds"
+    echo "  download           Download current video"
+    echo "  open               Open in browser/file manager"
+    echo "  --help, -h         Show this help message"
     exit 0
     ;;
 
@@ -247,8 +246,8 @@ case "$1" in
     STREAM_URL=$(get_prop "stream-path")
 
     if [ "$URL" == "null" ] || [ -z "$URL" ]; then exit 1; fi
-    log_msg "Toggling PiP. URL: $URL, Pos: $POS"
-    log_msg "Stream URL candidate: $STREAM_URL"
+    log_info "Toggling PiP. URL: $URL, Pos: $POS"
+    log_info "Stream URL candidate: $STREAM_URL"
 
     # Check if it's a local file
     LOCAL_FILE=$(is_local_video_file "$URL")
@@ -260,16 +259,16 @@ case "$1" in
         # Local file - use original path
         PLAY_URL="$LOCAL_FILE"
         MPV_OPTS="--hwdec=no --panscan=1.0 --keepaspect=yes --keepaspect-window=yes --video-unscaled=no $PERF_FLAGS"
-        log_msg "Local file detected for PiP toggle"
+        log_info "Local file detected for PiP toggle"
     elif [ "$STREAM_URL" != "null" ] && [ -n "$STREAM_URL" ]; then
         PLAY_URL="$STREAM_URL"
         FMT=$(get_fmt_string "$CURRENT_QUALITY")
         MPV_OPTS="--ytdl-format=$FMT --hwdec=no --panscan=1.0 --keepaspect=yes --keepaspect-window=yes --video-unscaled=no $PERF_FLAGS $COOKIE_OPTS"
-        log_msg "Using direct stream URL (Fast switch)"
+        log_info "Using direct stream URL (Fast switch)"
     else
         FMT=$(get_fmt_string "$CURRENT_QUALITY")
         MPV_OPTS="--ytdl-format=$FMT --hwdec=no --panscan=1.0 --keepaspect=yes --keepaspect-window=yes --video-unscaled=no $PERF_FLAGS $COOKIE_OPTS"
-        log_msg "Stream URL missing. Falling back to resolving URL (Slow switch)"
+        log_info "Stream URL missing. Falling back to resolving URL (Slow switch)"
     fi
 
     # Determine current mode by checking process
@@ -446,7 +445,7 @@ case "$1" in
     # Save preference
     echo "$NEXT_QUALITY" > "$QUALITY_FILE"
     notify-send "Live Wallpaper" "Switching quality to $NEXT_QUALITY..."
-    log_msg "Switching quality from $CURRENT_QUALITY to $NEXT_QUALITY"
+    log_info "Switching quality from $CURRENT_QUALITY to $NEXT_QUALITY"
 
     # Reload if playing
     if [ -S "$IPC_SOCKET" ]; then

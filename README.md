@@ -25,27 +25,37 @@ sudo make install  # Requires: mpvpaper, mpv, yt-dlp, socat, jq, fzf, swaybg
 ## Usage
 
 ```bash
-livewall                               # Search YouTube
-livewall "lofi hip hop"                # Direct search
+# Search and play
+livewall                               # Interactive search
+livewall "lofi hip hop"                # Direct search query
 livewall https://youtu.be/dQw4w9WgXcQ  # YouTube URL
 livewall ~/Videos/video.mp4            # Local file
+
+# Browse
 livewall local                         # Browse ~/Videos
-livewall history                       # Replay history
+livewall local /path/to/videos         # Browse custom directory
+livewall history                       # Replay watch history
+
+# Control
 livewall stop                          # Stop playback
+livewall logs                          # View logs
+livewall logs -f control               # Follow control log
 ```
 
-### Controls
+### Controls (livewall-control)
 | Command | Description |
 |---------|-------------|
 | `livewall stop` | Stop playback |
-| `livewall-control toggle-pip` | Wallpaper ↔ PiP |
-| `livewall-control toggle-pause` | Pause/Resume |
-| `livewall-control toggle-mute` | Mute/Unmute |
-| `livewall-control cycle-quality` | 1080p → 720p → 480p → best |
-| `livewall-control seek-forward` | +10s |
-| `livewall-control seek-backward` | -10s |
+| `livewall-control toggle-pip` | Toggle wallpaper ↔ floating window |
+| `livewall-control toggle-pause` | Pause/resume |
+| `livewall-control toggle-mute` | Mute/unmute |
+| `livewall-control cycle-quality` | Cycle quality (1080p → 720p → 480p → best) |
+| `livewall-control cycle-fit` | Cycle fit mode (fill → fit) |
+| `livewall-control cycle-aspect` | Cycle aspect ratio (original → 16:9 → 4:3) |
+| `livewall-control seek-forward` | Seek +10s |
+| `livewall-control seek-backward` | Seek -10s |
 | `livewall-control download` | Download video |
-| `livewall-control open` | Open in browser |
+| `livewall-control open` | Open in browser/file manager |
 
 ### Logs
 ```bash

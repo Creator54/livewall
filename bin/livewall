@@ -21,16 +21,29 @@ fi
 # Help
 if [[ "$1" == "--help" || "$1" == "-h" ]]; then
     echo "livewall - Live Wallpaper for YouTube & Local Videos"
+    echo ""
     echo "Usage: livewall [command|query|file]"
     echo ""
     echo "Commands:"
-    echo "  <query>               Search YouTube for videos"
-    echo "  /path/to/file.mp4     Play local video file directly"
-    echo "  local [dir]           Browse local videos (default: ~/Videos)"
-    echo "  history               Browse and replay playback history"
+    echo "  <query>               Search YouTube and play video"
+    echo "  /path/to/file.mp4     Play local video file"
+    echo "  local [directory]     Browse local videos (default: ~/Videos)"
+    echo "  history               Replay watch history"
     echo "  stop                  Stop playback"
-    echo "  logs [-f] [control|search|preview]  View logs (-f to follow)"
+    echo "  logs [options]        View logs"
     echo "  --help, -h            Show this help message"
+    echo ""
+    echo "Log Options:"
+    echo "  -f, --follow          Follow log output (tail -f)"
+    echo "  control               View control log (default)"
+    echo "  search                View search log"
+    echo "  preview               View preview log"
+    echo ""
+    echo "Examples:"
+    echo "  livewall \"lofi hip hop\""
+    echo "  livewall https://youtu.be/dQw4w9WgXcQ"
+    echo "  livewall ~/Videos/video.mp4"
+    echo "  livewall logs -f control"
     exit 0
 fi
 
@@ -136,26 +149,26 @@ if [ "$1" == "logs" ]; then
     shift
     FOLLOW=false
     LOG_FILE="control"
-    
-    # Parse flags
+
+    # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -f|--follow) FOLLOW=true; shift ;;
             control|search|preview) LOG_FILE="$1"; shift ;;
-            *) echo "Unknown option: $1"; exit 1 ;;
+            *) echo "Error: Unknown option: $1"; echo "Use 'livewall logs --help' for usage."; exit 1 ;;
         esac
     done
-    
-    FILE="$RUNTIME_DIR/${LOG_FILE}.log"
-    if [ ! -f "$FILE" ]; then
-        echo "No logs found. Run livewall first."
+
+    LOG_PATH="$RUNTIME_DIR/${LOG_FILE}.log"
+    if [ ! -f "$LOG_PATH" ]; then
+        echo "Error: No logs found. Run livewall first."
         exit 1
     fi
-    
+
     if [ "$FOLLOW" = true ]; then
-        tail -f "$FILE"
+        tail -f "$LOG_PATH"
     else
-        tail -50 "$FILE"
+        tail -50 "$LOG_PATH"
     fi
     exit 0
 fi
