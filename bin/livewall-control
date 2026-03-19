@@ -161,54 +161,47 @@ case "$1" in
         fi
     fi
     
-    if [ "$SOCKET_ALIVE" = true ] && (pgrep -f "mpvpaper" > /dev/null || pgrep -f "mpv" > /dev/null); then
-       log_info "Existing player found, switching video via IPC"
-       log_debug "IPC socket: $IPC_SOCKET"
-       echo "loadfile \"$URL\"" | socat - "$IPC_SOCKET"
-       notify-send "Live Wallpaper" "Loading..."
+    # Always kill previous instances for clean playback
+    log_info "=== CLEANING UP PREVIOUS INSTANCES ==="
+    pkill swaybg || true
+    pkill mpvpaper || true
+    pkill mpv || true
+
+    # Wait for players (and swaybg) to die to free up socket/resources
+    count=0
+    while (pgrep -f "mpvpaper" > /dev/null || pgrep -f "mpv" > /dev/null || pgrep -x "swaybg" > /dev/null) && [ $count -lt 20 ]; do
+        sleep 0.1
+        count=$((count+1))
+    done
+
+    # Force kill if still running
+    if pgrep -f "mpvpaper" > /dev/null; then pkill -9 mpvpaper; fi
+    if pgrep -f "mpv" > /dev/null; then pkill -9 mpv; fi
+    if pgrep -x "swaybg" > /dev/null; then pkill -9 swaybg; fi
+
+    # Remove stale socket
+    rm -f "$IPC_SOCKET"
+
+    # Start mpvpaper (wallpaper mode)
+    log_info "=== STARTING MPVPAPER (WALLPAPER MODE) ==="
+    log_debug "Runtime dir: $RUNTIME_DIR"
+    log_debug "IPC socket: $IPC_SOCKET"
+    notify-send "Live Wallpaper" "Loading..."
+
+    log_info "Launching mpvpaper as wallpaper"
+    log_debug "Command: mpvpaper -v -o '--loop --input-ipc-server=$IPC_SOCKET $MPV_OPTS $QUALITY_SCRIPT_OPT' '*' '$URL'"
+    setsid mpvpaper -v -o "--loop --input-ipc-server=$IPC_SOCKET $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$URL" >> "$CONTROL_LOG" 2>&1 &
+    MPVPAPER_PID=$!
+    log_debug "mpvpaper PID: $MPVPAPER_PID (detached with setsid)"
+
+    # Check if it started
+    sleep 2
+    if ! pgrep -f "mpvpaper" > /dev/null; then
+       log_error "mpvpaper failed to start (no process found after 2s)"
+       log_error "Check previous lines for mpvpaper error output"
+       notify-send "Error" "Failed to start video"
     else
-       # Start mpvpaper (default mode)
-       log_info "=== STARTING NEW MPVPAPER INSTANCE ==="
-       log_debug "Runtime dir: $RUNTIME_DIR"
-       log_debug "IPC socket: $IPC_SOCKET"
-       notify-send "Live Wallpaper" "Loading..."
-
-       # Kill old processes
-       log_debug "Cleaning up old processes..."
-       pkill swaybg || true
-       pkill mpvpaper || true
-       pkill mpv || true
-
-       # Wait for players (and swaybg) to die to free up socket/resources/layer
-       count=0
-       while (pgrep -f "mpvpaper" > /dev/null || pgrep -f "mpv" > /dev/null || pgrep -x "swaybg" > /dev/null) && [ $count -lt 20 ]; do
-           sleep 0.1
-           count=$((count+1))
-       done
-
-       # Force kill if still running
-       if pgrep -f "mpvpaper" > /dev/null; then pkill -9 mpvpaper; fi
-       if pgrep -f "mpv" > /dev/null; then pkill -9 mpv; fi
-       if pgrep -x "swaybg" > /dev/null; then pkill -9 swaybg; fi
-
-       # Remove stale socket
-       rm -f "$IPC_SOCKET"
-
-       # Start mpvpaper
-       log_info "Launching mpvpaper with verbose output"
-       log_debug "Command: mpvpaper -v -o '--loop --input-ipc-server=$IPC_SOCKET $MPV_OPTS $QUALITY_SCRIPT_OPT' '*' '$URL'"
-       # Use setsid to fully detach from terminal (prevents SIGHUP when kitty closes)
-       setsid mpvpaper -v -o "--loop --input-ipc-server=$IPC_SOCKET $MPV_OPTS $QUALITY_SCRIPT_OPT" '*' "$URL" >> "$CONTROL_LOG" 2>&1 &
-       MPVPAPER_PID=$!
-       log_debug "mpvpaper PID: $MPVPAPER_PID (detached with setsid)"
-
-       # Check if it started
-       sleep 2
-       if ! pgrep -f "mpvpaper" > /dev/null; then
-          log_error "mpvpaper failed to start (no process found after 2s)"
-          log_error "Check previous lines for mpvpaper error output"
-          notify-send "Error" "Failed to start video"
-       fi
+       log_info "mpvpaper started successfully"
     fi
     ;;
 
